@@ -40,9 +40,9 @@ class ImagePublisher(Node):
         self.pub = self.create_publisher(Image, 'images', qos_profile=qos_profile)
         timer_period = 0.10
         self.tmr = self.create_timer(timer_period, self.timer_callback)
-        _, package_path = get_resource('packages', 'rqt_image_view')
+        _, package_path = get_resource('packages', 'demo_image_publisher_py')
         example_image_file = os.path.join(
-            package_path, 'share', 'rqt_image_view', 'resource', 'lena.png')
+            package_path, 'share', 'demo_image_publisher_py', 'resource', 'lena.png')
 
         self.img = imread(example_image_file)
         self.msg = Image()
