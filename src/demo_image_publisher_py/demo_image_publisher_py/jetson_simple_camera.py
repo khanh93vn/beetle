@@ -27,8 +27,7 @@ from copy import deepcopy
 
 from ament_index_python.resources import get_resource
 
-from cv2 import imread
-
+import cv2
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile
