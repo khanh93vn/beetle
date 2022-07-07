@@ -23,6 +23,7 @@ setup(
     entry_points={
         'console_scripts': [
             'image_publisher = demo_image_publisher_py.image_publisher:main',
+            'jetson_simple_camera = demo_image_publisher_py.jetson_simple_camera:main'
         ],
     },
 )
