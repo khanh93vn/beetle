@@ -37,11 +37,11 @@ from sensor_msgs.msg import Image
 
 def gstreamer_pipeline(
     sensor_id=0,
-    capture_width=640,
-    capture_height=480,
+    capture_width=1280,
+    capture_height=720,
     display_width=640,
     display_height=480,
-    framerate=30,
+    framerate=60,
     flip_method=0,
 ):
     return (
@@ -66,34 +66,34 @@ def gstreamer_pipeline(
 class ImagePublisher(Node):
 
     def __init__(self):
-        video_capture = cv2.VideoCapture(gstreamer_pipeline(flip_method=0), cv2.CAP_GSTREAMER)
-        if not video_capture.isOpened():
+        self.video_capture = cv2.VideoCapture(gstreamer_pipeline(flip_method=0), cv2.CAP_GSTREAMER)
+        if not self.video_capture.isOpened():
             return
 
         super().__init__('image_publisher')
         self.i = 0
         qos_profile = QoSProfile(depth=1)
 
-        self.pub = self.create_publisher(Image, 'images', qos_profile=qos_profile)
-        timer_period = 0.10
+        self.pub = self.create_publisher(Image, '/camera', qos_profile=qos_profile)
+        timer_period = 1.0
         self.tmr = self.create_timer(timer_period, self.timer_callback)
 
-        ret_val, img = video_capture.read()
+        ret_val, img = self.video_capture.read()
 
         self.msg = Image()
-        self.msg.data = [int(b) for b in list(self.img.flatten())]
-        self.msg.height = self.img.shape[0]
-        self.msg.width = self.img.shape[1]
+        self.msg.data = [int(b) for b in list(img.flatten())]
+        self.msg.height = img.shape[0]
+        self.msg.width = img.shape[1]
         self.msg.encoding = 'rgb8'
-        self.msg.step = self.img.shape[1] * self.img.shape[2]
+        self.msg.step = img.shape[1] * img.shape[2]
 
     def timer_callback(self):
         self.i += 1
         self.get_logger().info('Publishing Camera capture: "{0}"'.format(self.i))
 
-        ret_val, img = video_capture.read()
-        self.msg.data = [int(b) for b in list(self.img.flatten())]
-        self.pub.publish(self.msg)
+        ret_val, img = self.video_capture.read()
+        self.msg.data = [int(b) for b in list(img.flatten())]
+        self.pub.publish(msg)
 
 
 def main(args=None):

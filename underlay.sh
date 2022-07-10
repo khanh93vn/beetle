@@ -25,7 +25,7 @@
 # export environmental variables
 {
   echo -n "Exporting environmental variables... " &&
-  export ROS_DOMAIN_ID=4 &&
+  export ROS_DOMAIN_ID=40 &&
   export LC_NUMERIC="en_US.UTF-8" &&
   echo "Done"
 }
