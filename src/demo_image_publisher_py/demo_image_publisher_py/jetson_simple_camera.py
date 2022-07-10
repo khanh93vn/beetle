@@ -66,8 +66,7 @@ def gstreamer_pipeline(
 class ImagePublisher(Node):
 
     def __init__(self):
-        # video_capture = cv2.VideoCapture(gstreamer_pipeline(flip_method=0), cv2.CAP_GSTREAMER)
-        video_capture = cv2.VideoCapture('/dev/video0')
+        video_capture = cv2.VideoCapture(gstreamer_pipeline(flip_method=0), cv2.CAP_GSTREAMER)
         if not video_capture.isOpened():
             return
 
