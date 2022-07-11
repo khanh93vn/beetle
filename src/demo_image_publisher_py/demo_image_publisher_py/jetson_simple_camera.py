@@ -93,7 +93,7 @@ class ImagePublisher(Node):
 
         ret_val, img = self.video_capture.read()
         self.msg.data = [int(b) for b in list(img.flatten())]
-        self.pub.publish(msg)
+        self.pub.publish(self.msg)
 
 
 def main(args=None):
