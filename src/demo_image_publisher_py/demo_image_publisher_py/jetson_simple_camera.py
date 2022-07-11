@@ -63,7 +63,7 @@ def gstreamer_pipeline(
     )
 
 
-class ImagePublisher(Node):
+class CameraPublisher(Node):
 
     def __init__(self):
         self.video_capture = cv2.VideoCapture(gstreamer_pipeline(flip_method=0), cv2.CAP_GSTREAMER)
@@ -75,7 +75,7 @@ class ImagePublisher(Node):
         qos_profile = QoSProfile(depth=1)
 
         self.pub = self.create_publisher(Image, '/camera', qos_profile=qos_profile)
-        timer_period = 1.0
+        timer_period = 0.1
         self.tmr = self.create_timer(timer_period, self.timer_callback)
 
         ret_val, img = self.video_capture.read()
@@ -90,8 +90,11 @@ class ImagePublisher(Node):
     def timer_callback(self):
         self.i += 1
         self.get_logger().info('Publishing Camera capture: "{0}"'.format(self.i))
+        try:
+            while True:
+                ret_val, img = self.video_capture.read()
+        except: pass
 
-        ret_val, img = self.video_capture.read()
         self.msg.data = [int(b) for b in list(img.flatten())]
         self.pub.publish(self.msg)
 
@@ -102,7 +105,7 @@ def main(args=None):
 
     rclpy.init(args=args)
 
-    node = ImagePublisher()
+    node = CameraPublisher()
 
     rclpy.spin(node)
 
