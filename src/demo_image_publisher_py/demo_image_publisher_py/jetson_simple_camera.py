@@ -90,11 +90,7 @@ class CameraPublisher(Node):
     def timer_callback(self):
         self.i += 1
         self.get_logger().info('Publishing Camera capture: "{0}"'.format(self.i))
-        try:
-            while True:
-                ret_val, img = self.video_capture.read()
-                self.get_logger().info(type(img))
-        except: pass
+        ret_val, img = self.video_capture.read()
 
         self.msg.data = [int(b) for b in list(img.flatten())]
         self.pub.publish(self.msg)
