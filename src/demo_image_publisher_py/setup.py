@@ -4,8 +4,9 @@ package_name = 'demo_image_publisher_py'
 data_files = [
     ('share/ament_index/resource_index/packages',
         ['resource/' + package_name]),
-    ('share/' + package_name, ['package.xml']),
+    ('share/' + package_name + '/launch', ['launch/jetson_cam_streaming.py']),
     ('share/' + package_name + '/resource', ['resource/lena.png']),
+    ('share/' + package_name, ['package.xml']),
 ]
 
 setup(
