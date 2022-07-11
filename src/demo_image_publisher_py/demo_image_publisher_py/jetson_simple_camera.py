@@ -93,6 +93,7 @@ class CameraPublisher(Node):
         try:
             while True:
                 ret_val, img = self.video_capture.read()
+                self.get_logger().info(type(img))
         except: pass
 
         self.msg.data = [int(b) for b in list(img.flatten())]
