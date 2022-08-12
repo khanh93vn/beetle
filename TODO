@@ -1,0 +1,18 @@
+- Set up simulation for control algorithm
+  (x, y, θ)
+  x' = ucos θ
+  y' = usin θ
+  θ' = (utan r)/l
+  - Ctrl θ:
+      u = -k?θ V u = k?θ
+      r = -k?atan2(θ, u/l)
+  - Ctrl x, y:
+      u = -k?(xcos θ + ysin θ)
+      r = -k?(θ-atan2(y, x))/u
+- Write jetson-microcontroller-serial node
+  - Publish transformation [tf2_msgs/msg/TFMessage]
+  - Subscribe from /cmd_vel [nav_2d_msgs/msg/Twist2D]
+- Implement navigation/cartography
+- Note on Reinforcement Learning approach
+V(x, y, θ) ?
+Q(u, r | x, y, θ) ?
