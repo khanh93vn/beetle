@@ -302,4 +302,12 @@ TeslaModel3 {
       }
     }
   ]
+  sensorsSlotRear [
+    InertialUnit {
+    }
+  ]
+  sensorsSlotCenter [
+    GPS {
+    }
+  ]
 }

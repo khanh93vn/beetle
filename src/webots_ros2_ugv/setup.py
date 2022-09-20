@@ -1,11 +1,15 @@
 from setuptools import setup
 
-package_name = 'webots_ros2_agv'
+package_name = 'webots_ros2_ugv'
 data_files = [
     ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
     ('share/' + package_name + '/launch', ['launch/robot_launch.py']),
+    ('share/' + package_name + '/launch', ['launch/simulation_launch.py']),
     ('share/' + package_name + '/worlds', ['worlds/khoa_cn.wbt']),
-    ('share/' + package_name + '/resource', ['resource/agv_webots.urdf']),
+    ('share/' + package_name + '/resource', ['resource/ugv_webots.urdf']),
+    ('share/' + package_name + '/rviz', ['rviz/urdf_config.rviz']),
+    ('share/' + package_name + '/config', ['config/localization_params.yaml']),
+    ('share/' + package_name + '/config', ['config/nav2_params.yaml']),
     ('share/' + package_name, ['package.xml']),
 ]
 
@@ -23,7 +27,6 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'agv_driver = webots_ros2_agv.agv_driver:main'
         ],
     },
 )

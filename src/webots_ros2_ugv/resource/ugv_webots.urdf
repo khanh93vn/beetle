@@ -1,0 +1,66 @@
+<?xml version="1.0" ?>
+<robot name="UGV Webots">
+  <webots>
+    <!-- <device reference="gps" type="GPS">
+      <ros>
+        <topicName>/gps</topicName>
+        <alwaysOn>true</alwaysOn>
+      </ros>
+    </device> -->
+    <plugin type="webots_ros2_driver::Ros2IMU">
+        <!-- If `False`, disable the device. By default the device will be enabled. -->
+        <enabled>True</enabled>
+
+        <!-- Set the topic name of the device. By default it will be `/robotName/referenceName`. -->
+        <topicName>/imu</topicName>
+        <!-- Set the update rate in Hz of the topic. By default the topic will be published at each simulation step. -->
+        <updateRate>10</updateRate>
+        <!-- If `True`, the device topics will constantly publish, which can slow down the simulation. -->
+        <!-- By default the topics are publishing only if there is at least one subscriber for the corresponding topic. -->
+        <alwaysOn>True</alwaysOn>
+        <!-- Set the frame ID for message headers. By default the frame ID is `referenceName`. -->
+        <frameName>imu</frameName>
+
+        <!-- Indicates the name of the inertial unit device. -->
+        <inertialUnitName>inertial unit</inertialUnitName>
+      </plugin>
+    <plugin type="webots_ros2_ugv.ugv_driver.UGVDriver"/>
+  </webots>
+
+  <link name="base_link">
+    <geometry>
+      <box size="3 1.72 0.6"/>
+    </geometry>
+    <material name="Cyan">
+      <color rgba="0 1.0 1.0 1.0"/>
+    </material>
+  </link>
+
+  <link name="base_footprint"/>
+  <joint name="base_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="base_footprint"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <link name="camera"/>
+  <joint name="camera_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera"/>
+    <origin xyz="3.79 0 0.142" rpy="0 0 0"/>
+  </joint>
+
+  <link name="imu"/>
+  <joint name="imu_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="imu"/>
+    <origin xyz="-1.05 0 0.2" rpy="0 0 3.1415"/>
+  </joint>
+
+  <link name="gps"/>
+  <joint name="gps_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="gps"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+</robot>
