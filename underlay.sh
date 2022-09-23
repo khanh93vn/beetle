@@ -6,6 +6,10 @@
       source /opt/ros/humble/setup.bash
     } ||
     {
+      echo -n -e "\nSetting up galatic version instead... " &&
+      source /opt/ros/galatic/setup.bash
+    } ||
+    {
       echo -n -e "\nSetting up foxy version instead... " &&
       source /opt/ros/foxy/setup.bash
     }
