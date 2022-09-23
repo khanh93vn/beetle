@@ -7,7 +7,7 @@ data_files = [
     ('share/' + package_name + '/launch', ['launch/simulation_launch.py']),
     ('share/' + package_name + '/worlds', ['worlds/khoa_cn.wbt']),
     ('share/' + package_name + '/resource', ['resource/ugv_webots.urdf']),
-    ('share/' + package_name + '/rviz', ['rviz/urdf_config.rviz']),
+    ('share/' + package_name + '/rviz', ['rviz/nav2_default_view.rviz']),
     ('share/' + package_name + '/config', ['config/localization_params.yaml']),
     ('share/' + package_name + '/config', ['config/nav2_params.yaml']),
     ('share/' + package_name, ['package.xml']),
