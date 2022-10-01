@@ -19,11 +19,11 @@ def generate_launch_description():
     rviz_config_file = LaunchConfiguration('rviz_config_file')
 
     # Define launch arguments
-    declare_use_js_pub_gui = DeclareLaunchArgument(
+    declare_use_js_pub_gui_cmd = DeclareLaunchArgument(
         name='use_js_pub_gui', default_value='True',
         description='Flag to enable joint_state_publisher_gui'
     )
-    declare_rviz_config_file = DeclareLaunchArgument(
+    declare_rviz_config_file_cmd = DeclareLaunchArgument(
         name='rviz_config_file', default_value=default_rviz_config_file,
         description='Absolute path to rviz config file'
     )
@@ -58,8 +58,8 @@ def generate_launch_description():
     ld = launch.LaunchDescription()
 
     # Declare launch options
-    ld.add_action(declare_use_js_pub_gui)
-    ld.add_action(declare_rviz_config_file)
+    ld.add_action(declare_use_js_pub_gui_cmd)
+    ld.add_action(declare_rviz_config_file_cmd)
 
     # Add conditioned actions
     ld.add_action(start_joint_state_publisher)
