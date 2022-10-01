@@ -28,19 +28,22 @@
   </webots>
 
   <link name="base_link">
-    <geometry>
-      <box size="3 1.72 0.6"/>
-    </geometry>
-    <material name="Cyan">
-      <color rgba="0 1.0 1.0 1.0"/>
-    </material>
+    <visual>
+      <origin xyz="-1.37 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="4.84 1.72 1.5"/>
+      </geometry>
+      <material name="Cyan">
+        <color rgba="0 1.0 1.0 1.0"/>
+      </material>
+    </visual>
   </link>
 
   <link name="base_footprint"/>
   <joint name="base_joint" type="fixed">
     <parent link="base_link"/>
     <child link="base_footprint"/>
-    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <origin xyz="1.37 0 0" rpy="0 0 0"/>
   </joint>
 
   <link name="camera"/>

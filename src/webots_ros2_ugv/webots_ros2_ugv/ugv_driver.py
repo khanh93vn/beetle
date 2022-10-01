@@ -6,15 +6,15 @@ from geometry_msgs.msg import Twist, TransformStamped
 from nav_msgs.msg import Odometry
 from tf2_ros import TransformBroadcaster
 
-WHEEL_BASE = 2.94
-MAX_STEERING_ANGLE = 0.8
+WHEEL_BASE = 2.94           # Distance between front and rear axle
+MAX_STEERING_ANGLE = 0.8    # Maximum ackermann steering angle
 
 class UGVDriver:
     def init(self, webots_node, properties):
         self.__robot = webots_node.robot
 
         rclpy.init(args=None)
-        self.__node = rclpy.create_node('my_robot_driver')
+        self.__node = rclpy.create_node('ugv_driver')
         self.__node.create_subscription(Twist, '/cmd_vel',
                                         self.__cmd_vel_callback, 1)
 
@@ -26,11 +26,20 @@ class UGVDriver:
         self._last_odometry_sample_time = self.__robot.getTime()
 
     def __cmd_vel_callback(self, message):
+        # Get linear speed (m/s)
         speed = message.linear.x
+
+        # Compute ackermann steering angle (rad) from yaw rate (rad/s)
         if speed == 0:
             steering_angle = 0
         else:
-            steering_angle = atan(WHEEL_BASE*message.angular.z/speed)
+            steering_angle = -atan(WHEEL_BASE*message.angular.z/speed)
+
+        # limit steering angle absolute value to 0.8 rad
+        if steering_angle > 0.8: steering_angle = 0.8
+        elif steering_angle < -0.8: steering_angle = -0.8
+
+        # Set cruising speed (km/h) and  steering angle (rad)
         self.__robot.setCruisingSpeed(speed*3.6)
         self.__robot.setSteeringAngle(steering_angle)
 
@@ -49,7 +58,7 @@ class UGVDriver:
         v = self.__robot.getCurrentSpeed()/7.2
         if isnan(v):
             v = 0
-        omega = v*tan(self.__robot.getSteeringAngle())/WHEEL_BASE
+        omega = -v*tan(self.__robot.getSteeringAngle())/WHEEL_BASE
 
         # self.__node.get_logger().info(f'Last twist: {(v, omega)}')
         # self.__node.get_logger().info(f'Time diff: {time_diff_s}')

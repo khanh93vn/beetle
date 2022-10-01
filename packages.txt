@@ -68,7 +68,6 @@ controller_manager
 controller_manager_msgs
 costmap_queue
 cv_bridge
-demo_image_publisher_py
 demo_nodes_cpp
 demo_nodes_cpp_native
 demo_nodes_py
@@ -110,6 +109,7 @@ gazebo_msgs
 gazebo_plugins
 gazebo_ros
 gazebo_ros_pkgs
+geographic_msgs
 geometry2
 geometry_msgs
 hardware_interface
@@ -149,6 +149,7 @@ nav2_behaviors
 nav2_bringup
 nav2_bt_navigator
 nav2_common
+nav2_constrained_smoother
 nav2_controller
 nav2_core
 nav2_costmap_2d
@@ -166,6 +167,7 @@ nav2_smac_planner
 nav2_smoother
 nav2_theta_star_planner
 nav2_util
+nav2_velocity_smoother
 nav2_voxel_grid
 nav2_waypoint_follower
 nav_2d_msgs
@@ -211,6 +213,7 @@ rmw_fastrtps_cpp
 rmw_fastrtps_shared_cpp
 rmw_implementation
 rmw_implementation_cmake
+robot_localization
 robot_state_publisher
 ros2_control_test_assets
 ros2action
@@ -337,11 +340,20 @@ tlsf_cpp
 topic_monitor
 tracetools
 trajectory_msgs
+transmission_interface
 turtle_tf2_py
+turtlebot3
+turtlebot3_bringup
+turtlebot3_cartographer
+turtlebot3_description
+turtlebot3_example
 turtlebot3_fake_node
 turtlebot3_gazebo
 turtlebot3_msgs
+turtlebot3_navigation2
+turtlebot3_node
 turtlebot3_simulations
+turtlebot3_teleop
 turtlesim
 uncrustify_vendor
 unique_identifier_msgs

@@ -9,9 +9,11 @@ WorldInfo {
   lineScale 1
 }
 Viewpoint {
-  orientation -0.2572920846239881 0.1721922016936579 0.9508683551710684 2.0071430992444412
-  position 84.68115685225654 -318.29370027682603 129.9543051104307
+  orientation -0.3468118436217103 -0.0034982458867779693 0.9379281994904652 3.1597817896334712
+  position 27.3641169141611 -78.27327322861025 16.346845419535924
   near 3
+  follow "vehicle"
+  followType "Mounted Shot"
 }
 TexturedBackground {
 }
@@ -287,7 +289,7 @@ SimpleBuilding {
 }
 TeslaModel3 {
   translation 11.1478 -77.0094 0.400134
-  rotation 0 0 1 3.1415
+  rotation 4.44264e-13 9.58979e-09 -1 -3.141495307179586
   controller "<extern>"
   sensorsSlotFront [
     Camera {
