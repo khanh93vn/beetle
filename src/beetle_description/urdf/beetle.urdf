@@ -459,7 +459,7 @@
     <child link="imu_link"/>
     <origin xyz="${control_box_xoff+control_box_width*0.3}
                  ${control_box_width*0.3}
-                 ${tube_width/2-control_box_width*(1-0.3)}"/>
+                 ${tube_width/2-control_box_width*(1-0.3)}" />
   </joint>
 
   <gazebo reference="imu_link">
@@ -554,6 +554,11 @@
           <remapping>gps_controller/out:=gps</remapping>
         </ros>
         <frame_name>gps_link</frame_name>
+        <offset>0 0 0</offset>
+        <drift>0.001 0.001 0.001</drift>
+        <gaussianNoise>0.05 0.05 0.05</gaussianNoise>
+        <velocityDrift>0.001 0.001 0.001</velocityDrift>
+        <velocityGaussianNoise>0.5 0.5 0.5</velocityGaussianNoise>
       </plugin>
     </sensor>
     <material>Gazebo/Turquoise</material>

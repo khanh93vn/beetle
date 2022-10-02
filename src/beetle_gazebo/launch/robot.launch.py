@@ -86,14 +86,15 @@ def generate_launch_description():
         output='screen')
 
     # Declare event handlers
+
+    load_ackermann_drive_base_ctrl_event = RegisterEventHandler(
+    event_handler=OnProcessExit(
+        target_action=start_gazebo_spawner,
+        on_exit=[load_ackermann_drive_base_controller]))
     load_joint_state_ctrl_event = RegisterEventHandler(
         event_handler=OnProcessExit(
-            target_action=start_gazebo_spawner,
-            on_exit=[load_joint_state_controller]))
-    load_ackermann_drive_base_ctrl_event = RegisterEventHandler(
-        event_handler=OnProcessExit(
             target_action=load_joint_state_controller,
-            on_exit=[load_ackermann_drive_base_controller]))
+            on_exit=[load_joint_state_controller]))
 
     # Create launch description
     ld = launch.LaunchDescription()
@@ -105,8 +106,8 @@ def generate_launch_description():
     ld.add_action(declare_log_level_cmd)
 
     # Register event handlers
-    ld.add_action(load_joint_state_ctrl_event)
     ld.add_action(load_ackermann_drive_base_ctrl_event)
+    # ld.add_action(load_joint_state_ctrl_event)
 
     # Add conditioned actions
     ld.add_action(start_rviz)

@@ -4,22 +4,24 @@ import launch
 import launch_ros
 
 from launch.actions import (
-    DeclareLaunchArgument, ExecuteProcess,
-    IncludeLaunchDescription, RegisterEventHandler)
+    DeclareLaunchArgument, EmitEvent, ExecuteProcess,
+    GroupAction, IncludeLaunchDescription, RegisterEventHandler,
+    SetEnvironmentVariable)
 from launch.conditions import IfCondition, UnlessCondition
+from launch.events import Shutdown
 from launch.event_handlers import OnProcessExit
 from launch.substitutions import Command, LaunchConfiguration
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
+from nav2_common.launch import RewrittenYaml
 
 def generate_launch_description():
     # beetle_desc_dir = FindPackageShare(package='beetle_description').find('beetle_description')
     beetle_gazebo_dir = FindPackageShare(package='beetle_gazebo').find('beetle_gazebo')
     beetle_nav_dir = FindPackageShare(package='beetle_navigation2').find('beetle_navigation2')
+    bringup_dir = FindPackageShare(package='nav2_bringup').find('nav2_bringup')
     # robot_description = Command(['xacro ', os.path.join(beetle_desc_dir, 'urdf/beetle.urdf')])
-    simulator_launch_dir = os.path.join(beetle_gazebo_dir, 'launch')
-    navigation_launch_dir = os.path.join(beetle_nav_dir, 'launch')
     default_rviz_config_file = os.path.join(beetle_nav_dir, 'rviz/default_view.rviz')
 
     # Create launch configuration variables
@@ -34,7 +36,20 @@ def generate_launch_description():
     map_yaml_file = LaunchConfiguration('map')
     log_level = LaunchConfiguration('log_level')
 
+    # Rewrite params in files
+    param_substitutions = {
+        'use_sim_time': use_sim_time,
+        'yaml_filename': map_yaml_file}
+
+    configured_params = RewrittenYaml(
+        source_file=params_file,
+        # root_key='/',
+        param_rewrites=param_substitutions,
+        convert_types=True)
+
     # Define launch arguments
+    stdout_linebuf_envvar = SetEnvironmentVariable(
+        'RCUTILS_LOGGING_BUFFERED_STREAM', '1')
     declare_autostart_cmd = DeclareLaunchArgument(
         'autostart', default_value='true',
         description='Automatically startup the nav2 stack')
@@ -73,29 +88,40 @@ def generate_launch_description():
     # Define actions
     start_simulator = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(simulator_launch_dir, 'robot.launch.py')),
+            os.path.join(beetle_gazebo_dir, 'launch', 'robot.launch.py')),
         condition=IfCondition(use_simulator),
         launch_arguments={'use_sim_time': use_sim_time,
                           'use_rviz': use_rviz,
                           'rviz_config_file': rviz_config_file,
                           'log_level': log_level}.items())
-
-    start_localization = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(navigation_launch_dir, 'localization.launch.py')),
-        launch_arguments={'use_sim_time': use_sim_time,
-                          'autostart': autostart,
-                          'use_composition': use_composition,
-                          'params_file': params_file,
-                          'use_respawn': use_respawn,
-                          'map': map_yaml_file,
-                          'log_level': log_level}.items())
-
-    start_navigation = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(navigation_launch_dir, 'navigation.launch.py')),
-        launch_arguments={'use_sim_time': use_sim_time,
-                          'log_level': log_level}.items())
+    bringup_cmd_group = GroupAction([
+        Node(
+            condition=IfCondition(use_composition),
+            name='nav2_container',
+            package='rclcpp_components',
+            executable='component_container_isolated',
+            parameters=[configured_params, {'autostart': autostart}],
+            arguments=['--ros-args', '--log-level', log_level],
+            output='screen'),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(beetle_nav_dir, 'launch', 'localization.launch.py')),
+            launch_arguments={'use_sim_time': use_sim_time,
+                              'autostart': autostart,
+                              'use_composition': use_composition,
+                              'params_file': params_file,
+                              'use_respawn': use_respawn,
+                              'map': map_yaml_file,
+                              'container_name': 'nav2_container'}.items()),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(
+                os.path.join(bringup_dir, 'launch', 'navigation_launch.py')),
+            launch_arguments={'use_sim_time': use_sim_time,
+                              'autostart': autostart,
+                              'params_file': params_file,
+                              'use_composition': use_composition,
+                              'use_respawn': use_respawn,
+                              'container_name': 'nav2_container'}.items())])
 
     # Declare event handlers
 
@@ -103,6 +129,7 @@ def generate_launch_description():
     ld = launch.LaunchDescription()
 
     # Declare launch options
+    ld.add_action(stdout_linebuf_envvar)
     ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_use_simulator_cmd)
     ld.add_action(declare_use_sim_time_cmd)
@@ -121,7 +148,6 @@ def generate_launch_description():
     # ld.add_action(start_robot_interfacing)
 
     # Add actions
-    ld.add_action(start_localization)
-    # ld.add_action(start_navigation)
+    ld.add_action(bringup_cmd_group)
 
     return ld

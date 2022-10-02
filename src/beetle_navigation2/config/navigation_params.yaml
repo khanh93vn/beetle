@@ -10,14 +10,13 @@ bt_navigator:
     # nav2_bt_navigator/navigate_to_pose_w_replanning_and_recovery.xml
     # nav2_bt_navigator/navigate_through_poses_w_replanning_and_recovery.xml
     # They can be set here or via a RewrittenYaml remap from a parent launch file to Nav2.
-    default_nav_to_pose_bt_xml: "/home/khanh/git-projects/ros2-workspace/src/webots_ros2_ugv/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml"
-    default_nav_through_poses_bt_xml: "/home/khanh/git-projects/ros2-workspace/src/webots_ros2_ugv/behavior_trees/navigate_through_poses_w_replanning_and_recovery.xml"
+    default_nav_to_pose_bt_xml: "/home/khanh/git-projects/ros2-workspace/install/beetle_navigation2/share/beetle_navigation2/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml"
+    default_nav_through_poses_bt_xml: "/home/khanh/git-projects/ros2-workspace/install/beetle_navigation2/share/beetle_navigation2/behavior_trees/navigate_through_poses_w_replanning_and_recovery.xml"
     plugin_lib_names:
     - nav2_compute_path_to_pose_action_bt_node
     - nav2_compute_path_through_poses_action_bt_node
     - nav2_smooth_path_action_bt_node
     - nav2_follow_path_action_bt_node
-    # - nav2_spin_action_bt_node
     - nav2_wait_action_bt_node
     - nav2_back_up_action_bt_node
     - nav2_drive_on_heading_bt_node
@@ -54,7 +53,6 @@ bt_navigator:
     - nav2_controller_cancel_bt_node
     - nav2_path_longer_on_approach_bt_node
     - nav2_wait_cancel_bt_node
-    # - nav2_spin_cancel_bt_node
     - nav2_back_up_cancel_bt_node
     - nav2_drive_on_heading_cancel_bt_node
 
@@ -91,10 +89,10 @@ controller_server:
       yaw_goal_tolerance: 0.05
     FollowPath:
       plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
-      desired_linear_vel: 1.5
-      lookahead_dist: 2.5
+      desired_linear_vel: 0.75
+      lookahead_dist: 1.8
       min_lookahead_dist: 1.2
-      max_lookahead_dist: 3.6
+      max_lookahead_dist: 2.4
       lookahead_time: 1.5
       rotate_to_heading_angular_vel: 1.8
       transform_tolerance: 0.3
@@ -105,8 +103,8 @@ controller_server:
       max_allowed_time_to_collision_up_to_carrot: 5.0
       use_regulated_linear_velocity_scaling: true
       use_cost_regulated_linear_velocity_scaling: true
-      regulated_linear_scaling_min_radius: 4.0
-      regulated_linear_scaling_min_speed: 0.75
+      regulated_linear_scaling_min_radius: 2.0
+      regulated_linear_scaling_min_speed: 0.35
       use_rotate_to_heading: false
       allow_reversing: true
       rotate_to_heading_min_angle: 0.785
@@ -122,17 +120,18 @@ local_costmap:
       global_frame: odom
       robot_base_frame: base_link
       # robot_radius: 1.0
-      footprint: "[ [2.42, 0.86], [2.42, -0.86], [-2.42, -0.86], [-2.42, 0.86] ]"
+      footprint: "[ [1.687, 0.390], [1.687, -0.390], [-0.303, -0.390], [-0.303, 0.390] ]"
       use_sim_time: True
       rolling_window: true
-      width: 15
-      height: 15
-      resolution: 0.2
-      plugins: ["inflation_layer"]
-      inflation_layer:
-        plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 3.0
-        inflation_radius: 0.55
+      width: 5
+      height: 5
+      resolution: 0.1
+      plugins: ["static_layer"]
+      # plugins: ["inflation_layer", "static_layer"]
+      # inflation_layer:
+      #   plugin: "nav2_costmap_2d::InflationLayer"
+      #   cost_scaling_factor: 3.0
+      #   inflation_radius: 0.55
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: True
@@ -149,21 +148,25 @@ global_costmap:
       global_frame: map
       robot_base_frame: base_link
       # robot_radius: 1.0
-      footprint: "[ [3.79, 0.86], [3.79, -0.86], [-1.05, -0.86], [-1.05, 0.86] ]"
+      footprint: "[ [1.687, 0.390], [1.687, -0.390], [-0.303, -0.390], [-0.303, 0.390] ]"
       use_sim_time: True
-      resolution: 0.2
+      rolling_window: true
+      width: 10
+      height: 10
+      resolution: 0.1
       track_unknown_space: false
-      plugins: ["static_layer", "inflation_layer"]
+      # plugins: ["static_layer", "inflation_layer"]
+      plugins: ["static_layer"]
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: True
         enabled: True
         subscribe_to_updates: False
         transform_tolerance: 0.8
-      inflation_layer:
-        plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 3.0
-        inflation_radius: 0.55
+      # inflation_layer:
+      #   plugin: "nav2_costmap_2d::InflationLayer"
+      #   cost_scaling_factor: 3.0
+      #   inflation_radius: 0.55
       always_send_full_costmap: True
 
 map_server:
@@ -171,7 +174,7 @@ map_server:
     use_sim_time: True
     # Overridden in launch by the "map" launch configuration or provided default value.
     # To use in yaml, remove the default "map" value in the tb3_simulation_launch.py file & provide full path to map below.
-    yaml_filename: "/home/khanh/git-projects/ros2-workspace/src/webots_ros2_ugv/maps/map.yaml"
+    yaml_filename: "/home/khanh/git-projects/ros2-workspace/install/beetle_navigation2/share/beetle_navigation2/maps/map.yaml"
 
 map_saver:
   ros__parameters:
@@ -197,7 +200,7 @@ planner_server:
       angle_quantization_bins: 64         # Number of angle bins for search
       analytic_expansion_ratio: 3.5       # The ratio to attempt analytic expansions during search for final approach.
       analytic_expansion_max_length: 3.0  # For Hybrid/Lattice nodes: The maximum length of the analytic expansion to be considered valid to prevent unsafe shortcutting
-      minimum_turning_radius: 2.90        # minimum turning radius in m of path / vehicle
+      minimum_turning_radius: 1.18        # minimum turning radius in m of path / vehicle
       reverse_penalty: 2.0                # Penalty to apply if motion is reversing, must be => 1
       change_penalty: 0.0                 # Penalty to apply if motion is changing directions (L to R), must be >= 0
       non_straight_penalty: 1.2           # Penalty to apply if motion is non-straight, must be => 1
@@ -277,6 +280,7 @@ velocity_smoother:
 
 ekf_filter_node_odom:
   ros__parameters:
+    use_sim_time: True
     frequency: 30.0
     sensor_timeout: 0.1
     two_d_mode: false
@@ -348,6 +352,7 @@ ekf_filter_node_odom:
                                   0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,     0.0,    0.0,    1.0]
 ekf_filter_node_map:
   ros__parameters:
+    use_sim_time: True
     frequency: 30.0
     sensor_timeout: 0.1
     two_d_mode: false
@@ -420,12 +425,14 @@ ekf_filter_node_map:
 
 navsat_transform:
   ros__parameters:
+    use_sim_time: true
     frequency: 30.0
     delay: 3.0
-    magnetic_declination_radians: 0.0429351  # For lat/long 55.944831, -3.186998
+    magnetic_declination_radians: 0.010821041362364843  # For lat/long 10.03307987984352, 105.76725084149514
     yaw_offset: 1.570796327  # IMU reads 0 facing magnetic north, not east
     zero_altitude: false
     broadcast_utm_transform: true
     publish_filtered_gps: true
+    broadcast_utm_transform_as_parent_frame: true
     use_odometry_yaw: false
     wait_for_datum: false
