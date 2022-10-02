@@ -1,5 +1,8 @@
 <?xml version="1.0"?>
 <robot name="beetle" xmlns:xacro="http://ros.org/wiki/xacro">
+  <!-- Define arguments -->
+  <xacro:arg name="beetle_controller_yaml_file"
+             default="$(find beetle_gazebo)/config/ackermann_controller.yaml"/>
 
   <!-- Define robot's inertial constants -->
   <xacro:property name="chassis_mass" value="40.0"/>
@@ -445,7 +448,7 @@
     <plugin filename="libgazebo_ros2_control.so" name="gazebo_ros2_control">
       <robot_param>robot_description</robot_param>
       <robot_param_node>robot_state_publisher</robot_param_node>
-      <parameters>$(find beetle_gazebo)/config/ackermann_controller.yaml</parameters>
+      <parameters>$(arg beetle_controller_yaml_file)</parameters>
     </plugin>
   </gazebo>
 

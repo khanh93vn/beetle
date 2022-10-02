@@ -46,7 +46,6 @@ controller_interface::CallbackReturn AckermannDriveController::on_init()
     auto_declare<std::string>("right_steering_name", std::string());
 
     auto_declare<double>("wheel_separation", wheel_params_.separation);
-    auto_declare<int>("wheels_per_side", wheel_params_.wheels_per_side);
     auto_declare<double>("wheel_radius", wheel_params_.radius);
     auto_declare<double>("wheel_separation_multiplier", wheel_params_.separation_multiplier);
     auto_declare<double>("left_wheel_radius_multiplier", wheel_params_.left_radius_multiplier);
@@ -175,36 +174,25 @@ controller_interface::return_type AckermannDriveController::update(
   }
   else
   {
-    double left_feedback_mean = 0.0;
-    double right_feedback_mean = 0.0;
-    for (size_t index = 0; index < wheels.wheels_per_side; ++index)
+    const double left_feedback = registered_left_wheel_handle_->feedback.get().get_value();
+    const double right_feedback =
+      registered_right_wheel_handle_->feedback.get().get_value();
+
+    if (std::isnan(left_feedback) || std::isnan(right_feedback))
     {
-      const double left_feedback = registered_left_wheel_handle_->feedback.get().get_value();
-      const double right_feedback =
-        registered_right_wheel_handle_->feedback.get().get_value();
-
-      if (std::isnan(left_feedback) || std::isnan(right_feedback))
-      {
-        RCLCPP_ERROR(
-          logger, "Either the left or right wheel %s is invalid for index [%zu]", feedback_type(),
-          index);
-        return controller_interface::return_type::ERROR;
-      }
-
-      left_feedback_mean += left_feedback;
-      right_feedback_mean += right_feedback;
+      RCLCPP_ERROR(
+        logger, "Either the left or right wheel %s is invalid", feedback_type());
+      return controller_interface::return_type::ERROR;
     }
-    left_feedback_mean /= wheels.wheels_per_side;
-    right_feedback_mean /= wheels.wheels_per_side;
 
     if (odom_params_.position_feedback)
     {
-      odometry_.update(left_feedback_mean, right_feedback_mean, time);
+      odometry_.update(left_feedback, right_feedback, time);
     }
     else
     {
       odometry_.updateFromVelocity(
-        left_feedback_mean * period.seconds(), right_feedback_mean * period.seconds(), time);
+        left_feedback * period.seconds(), right_feedback * period.seconds(), time);
     }
   }
 
@@ -343,8 +331,6 @@ controller_interface::CallbackReturn AckermannDriveController::on_configure(
   right_steering_name_ = get_node()->get_parameter("right_steering_name").as_string();
 
   wheel_params_.separation = get_node()->get_parameter("wheel_separation").as_double();
-  wheel_params_.wheels_per_side =
-    static_cast<size_t>(get_node()->get_parameter("wheels_per_side").as_int());
   wheel_params_.radius = get_node()->get_parameter("wheel_radius").as_double();
   wheel_params_.separation_multiplier =
     get_node()->get_parameter("wheel_separation_multiplier").as_double();
@@ -433,9 +419,6 @@ controller_interface::CallbackReturn AckermannDriveController::on_configure(
   {
     return controller_interface::CallbackReturn::ERROR;
   }
-
-  // left and right sides are both equal at this point
-  wheel_params_.wheels_per_side = 1;
 
   if (publish_limited_velocity_)
   {

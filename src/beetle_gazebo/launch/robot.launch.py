@@ -1,7 +1,6 @@
 import os
 
 import launch
-import launch_ros
 
 from launch.actions import DeclareLaunchArgument, ExecuteProcess, RegisterEventHandler
 from launch.conditions import IfCondition, UnlessCondition
@@ -13,12 +12,13 @@ from launch_ros.substitutions import FindPackageShare
 def generate_launch_description():
     beetle_desc_dir = FindPackageShare(package='beetle_description').find('beetle_description')
     beetle_gazebo_dir = FindPackageShare(package='beetle_gazebo').find('beetle_gazebo')
-    robot_description = Command(['xacro ', os.path.join(beetle_desc_dir, 'urdf/beetle.urdf')])
+    default_controller_yaml_file = os.path.join(beetle_gazebo_dir, 'config/ackermann_controller.yaml')
     default_rviz_config_file = os.path.join(beetle_gazebo_dir, 'rviz/default_view.rviz')
 
     # Create launch configuration variables
     use_sim_time = LaunchConfiguration('use_sim_time')
     use_rviz = LaunchConfiguration('use_rviz')
+    params_file = LaunchConfiguration('params_file')
     rviz_config_file = LaunchConfiguration('rviz_config_file')
     log_level = LaunchConfiguration('log_level')
 
@@ -30,6 +30,9 @@ def generate_launch_description():
     declare_use_rviz_cmd = DeclareLaunchArgument(
         'use_rviz', default_value='true',
         description='Start with RViz if true')
+    declare_params_file_cmd = DeclareLaunchArgument(
+        name='params_file', default_value=default_controller_yaml_file,
+        description='Absolute path to controller yaml config file')
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
         name='rviz_config_file', default_value=default_rviz_config_file,
         description='Absolute path to rviz config file')
@@ -42,6 +45,9 @@ def generate_launch_description():
             'R': LaunchConfiguration('roll', default='0.00'),
             'P': LaunchConfiguration('pitch', default='0.00'),
             'Y': LaunchConfiguration('yaw', default='0.00')}
+
+    robot_description = Command(['xacro ', os.path.join(beetle_desc_dir, 'urdf/beetle.urdf'),
+                                ' beetle_controller_yaml_file:=', params_file])
 
     # Define actions
     start_gazebo = ExecuteProcess(
@@ -102,6 +108,7 @@ def generate_launch_description():
     # Declare launch options
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_use_rviz_cmd)
+    ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_rviz_config_file_cmd)
     ld.add_action(declare_log_level_cmd)
 

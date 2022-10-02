@@ -17,11 +17,9 @@ from launch_ros.substitutions import FindPackageShare
 from nav2_common.launch import RewrittenYaml
 
 def generate_launch_description():
-    # beetle_desc_dir = FindPackageShare(package='beetle_description').find('beetle_description')
     beetle_gazebo_dir = FindPackageShare(package='beetle_gazebo').find('beetle_gazebo')
     beetle_nav_dir = FindPackageShare(package='beetle_navigation2').find('beetle_navigation2')
     bringup_dir = FindPackageShare(package='nav2_bringup').find('nav2_bringup')
-    # robot_description = Command(['xacro ', os.path.join(beetle_desc_dir, 'urdf/beetle.urdf')])
     default_rviz_config_file = os.path.join(beetle_nav_dir, 'rviz/default_view.rviz')
 
     # Create launch configuration variables
@@ -92,6 +90,7 @@ def generate_launch_description():
         condition=IfCondition(use_simulator),
         launch_arguments={'use_sim_time': use_sim_time,
                           'use_rviz': use_rviz,
+                          'params_file': params_file,
                           'rviz_config_file': rviz_config_file,
                           'log_level': log_level}.items())
     bringup_cmd_group = GroupAction([

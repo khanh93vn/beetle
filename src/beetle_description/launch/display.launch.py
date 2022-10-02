@@ -1,17 +1,17 @@
 import os
 
 import launch
-import launch_ros
+import xacro
 
 from launch.actions import DeclareLaunchArgument
 from launch.conditions import IfCondition, UnlessCondition
-from launch.substitutions import Command, LaunchConfiguration
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description():
     beetle_desc_dir = FindPackageShare(package='beetle_description').find('beetle_description')
-    robot_description = Command(['xacro ', os.path.join(beetle_desc_dir, 'urdf/beetle.urdf')])
+    robot_description = xacro.process_file(os.path.join(beetle_desc_dir, 'urdf/beetle.urdf')).toxml()
     default_rviz_config_file = os.path.join(beetle_desc_dir, 'rviz/default_view.rviz')
 
     # Create launch configuration variables

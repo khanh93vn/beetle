@@ -199,83 +199,147 @@ Visualization Manager:
       Show Axes: true
       Show Names: true
       Tree:
-        base_link:
-          base_footprint:
-            {}
-          gps_link:
-            {}
-          imu_link:
-            {}
-          left_steering_link:
-            front_left_wheel_link:
-              front_left_wheel_inner_rim_link:
-                {}
-              front_left_wheel_outer_rim_link:
-                {}
-          rear_left_wheel_link:
-            rear_left_wheel_inner_rim_link:
-              {}
-            rear_left_wheel_outer_rim_link:
-              {}
-          rear_right_wheel_link:
-            rear_right_wheel_inner_rim_link:
-              {}
-            rear_right_wheel_outer_rim_link:
-              {}
-          right_steering_link:
-            front_right_wheel_link:
-              front_right_wheel_inner_rim_link:
-                {}
-              front_right_wheel_outer_rim_link:
-                {}
         map:
+          odom:
+            base_link:
+              base_footprint:
+                {}
+              gps_link:
+                {}
+              imu_link:
+                {}
+              left_steering_link:
+                front_left_wheel_link:
+                  front_left_wheel_inner_rim_link:
+                    {}
+                  front_left_wheel_outer_rim_link:
+                    {}
+              rear_left_wheel_link:
+                rear_left_wheel_inner_rim_link:
+                  {}
+                rear_left_wheel_outer_rim_link:
+                  {}
+              rear_right_wheel_link:
+                rear_right_wheel_inner_rim_link:
+                  {}
+                rear_right_wheel_outer_rim_link:
+                  {}
+              right_steering_link:
+                front_right_wheel_link:
+                  front_right_wheel_inner_rim_link:
+                    {}
+                  front_right_wheel_outer_rim_link:
+                    {}
           utm:
             {}
-        odom:
-          {}
       Update Interval: 0
       Value: true
-    - Alpha: 1
-      Buffer Length: 1
-      Class: rviz_default_plugins/Path
-      Color: 25; 255; 0
+    - Class: rviz_common/Group
+      Displays:
+        - Alpha: 1
+          Buffer Length: 1
+          Class: rviz_default_plugins/Path
+          Color: 25; 255; 0
+          Enabled: true
+          Head Diameter: 0.30000001192092896
+          Head Length: 0.20000000298023224
+          Length: 0.30000001192092896
+          Line Style: Lines
+          Line Width: 0.029999999329447746
+          Name: Path
+          Offset:
+            X: 0
+            Y: 0
+            Z: 0
+          Pose Color: 255; 85; 255
+          Pose Style: None
+          Radius: 0.029999999329447746
+          Shaft Diameter: 0.10000000149011612
+          Shaft Length: 0.10000000149011612
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /plan
+          Value: true
+        - Alpha: 0.699999988079071
+          Class: rviz_default_plugins/Map
+          Color Scheme: map
+          Draw Behind: false
+          Enabled: true
+          Name: Map
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /global_costmap/costmap
+          Update Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /global_costmap/costmap_updates
+          Use Timestamp: false
+          Value: true
       Enabled: true
-      Head Diameter: 0.30000001192092896
-      Head Length: 0.20000000298023224
-      Length: 0.30000001192092896
-      Line Style: Lines
-      Line Width: 0.029999999329447746
-      Name: Path
-      Offset:
-        X: 0
-        Y: 0
-        Z: 0
-      Pose Color: 255; 85; 255
-      Pose Style: None
-      Radius: 0.029999999329447746
-      Shaft Diameter: 0.10000000149011612
-      Shaft Length: 0.10000000149011612
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        Filter size: 10
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /plan
-      Value: true
-    - Alpha: 1
-      Class: rviz_default_plugins/Polygon
-      Color: 25; 255; 0
+      Name: GlobalPlanner
+    - Class: rviz_common/Group
+      Displays:
+        - Alpha: 0.699999988079071
+          Class: rviz_default_plugins/Map
+          Color Scheme: map
+          Draw Behind: false
+          Enabled: true
+          Name: Map
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /local_costmap/costmap
+          Update Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /local_costmap/costmap_updates
+          Use Timestamp: false
+          Value: true
+        - Alpha: 1
+          Class: rviz_default_plugins/Polygon
+          Color: 25; 255; 0
+          Enabled: true
+          Name: Polygon
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /local_costmap/published_footprint
+          Value: true
+        - Alpha: 1
+          Class: rviz_default_plugins/PointStamped
+          Color: 204; 41; 204
+          Enabled: true
+          History Length: 1
+          Name: PointStamped
+          Radius: 0.20000000298023224
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /lookahead_point
+          Value: true
       Enabled: true
-      Name: Polygon
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        Filter size: 10
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /local_costmap/published_footprint
-      Value: true
+      Name: LocalPlanner
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -304,25 +368,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 35.79042053222656
+      Distance: 6.583293914794922
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 2.4919817447662354
-        Y: 0.21057507395744324
-        Z: -1.2846848964691162
+        X: 1.2656663656234741
+        Y: 0.5043134093284607
+        Z: -1.2487326860427856
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.0303981304168701
+      Pitch: 0.535398542881012
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.658583164215088
+      Yaw: 5.31358003616333
     Saved: ~
 Window Geometry:
   Displays:
@@ -332,7 +396,7 @@ Window Geometry:
   Hide Right Dock: false
   Navigation 2:
     collapsed: false
-  QMainWindow State: 000000ff00000000fd00000001000000000000015600000266fc0200000004fc0000003d00000266000001430100001cfa000000000100000002fb000000100044006900730070006c0061007900730100000000000001560000015600fffffffb00000018004e0061007600690067006100740069006f006e002000320100000000ffffffff0000011600fffffffb000000100044006900730070006c00610079007300000001a5000000fe0000000000000000fb0000000a005600690065007700730000000111000001920000000000000000fb0000001c005400720061006e00730066006f0072006d006100740069006f006e000000024b0000007b0000000000000000000003b00000026600000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd00000001000000000000015600000266fc0200000004fc0000003d00000266000001560100001cfa000000000100000002fb000000100044006900730070006c0061007900730100000000000001560000015600fffffffb00000018004e0061007600690067006100740069006f006e002000320100000000ffffffff0000011600fffffffb000000100044006900730070006c00610079007300000001a5000000fe0000000000000000fb0000000a005600690065007700730000000111000001920000000000000000fb0000001c005400720061006e00730066006f0072006d006100740069006f006e000000024b0000007b0000000000000000000003b00000026600000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Width: 1292
   X: 74
   Y: 27
