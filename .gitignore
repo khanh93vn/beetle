@@ -7,4 +7,3 @@ tmp
 !underlay.sh
 !overlay.sh
 !print-packages-info.sh
-!*/src/
