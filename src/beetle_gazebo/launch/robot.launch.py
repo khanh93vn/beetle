@@ -13,7 +13,6 @@ def generate_launch_description():
     beetle_desc_dir = FindPackageShare(package='beetle_description').find('beetle_description')
     beetle_gazebo_dir = FindPackageShare(package='beetle_gazebo').find('beetle_gazebo')
     launch_dir = os.path.join(beetle_gazebo_dir, 'launch')
-    default_world_file = os.path.join(beetle_gazebo_dir, 'worlds/ctu_college_of_tech_workshop.world')
     default_controller_yaml_file = os.path.join(beetle_gazebo_dir, 'config/ackermann_controller.yaml')
     default_rviz_config_file = os.path.join(beetle_gazebo_dir, 'rviz/default_view.rviz')
 
@@ -24,7 +23,13 @@ def generate_launch_description():
     params_file = LaunchConfiguration('params_file')
     world_file = LaunchConfiguration('world_file')
     rviz_config_file = LaunchConfiguration('rviz_config_file')
+    api_key = LaunchConfiguration('api_key')
     log_level = LaunchConfiguration('log_level')
+
+    robot_description = Command(['xacro ', os.path.join(beetle_desc_dir, 'urdf/beetle.urdf'),
+                                ' beetle_controller_yaml_file:=', params_file])
+    default_world_file = Command(['xacro ', os.path.join(beetle_gazebo_dir, 'worlds/ctu_college_of_tech_workshop.world'),
+                                ' api_key:=', api_key])
 
     # Define launch arguments
     headless = LaunchConfiguration('headless')
@@ -48,6 +53,9 @@ def generate_launch_description():
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
         name='rviz_config_file', default_value=default_rviz_config_file,
         description='Absolute path to rviz config file')
+    declare_api_key_cmd = DeclareLaunchArgument(
+        name='api_key', default_value='',
+        description='Google API key to download map')
     declare_log_level_cmd = DeclareLaunchArgument(
         'log_level', default_value='info',
         description='log level')
@@ -57,9 +65,6 @@ def generate_launch_description():
             'R': LaunchConfiguration('roll', default='0.00'),
             'P': LaunchConfiguration('pitch', default='0.00'),
             'Y': LaunchConfiguration('yaw', default='0.00')}
-
-    robot_description = Command(['xacro ', os.path.join(beetle_desc_dir, 'urdf/beetle.urdf'),
-                                ' beetle_controller_yaml_file:=', params_file])
 
     # Define actions
     start_gazebo_server = ExecuteProcess(
@@ -127,6 +132,7 @@ def generate_launch_description():
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_world_file_cmd)
     ld.add_action(declare_rviz_config_file_cmd)
+    ld.add_action(declare_api_key_cmd)
     ld.add_action(declare_log_level_cmd)
 
     # Register event handlers

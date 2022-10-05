@@ -11,7 +11,7 @@
       <center>10.0325556484729 105.76789084198195</center>
       <world_size>100</world_size>
       <map_type>satellite</map_type>
-      <api_key>AIzaSyBh1RhgeF69RTAf1ryrGHHOj_sVqHLAlbw</api_key>
+      <api_key>${}</api_key>
       <use_cache>true</use_cache>
     </plugin>
   </world>
