@@ -225,7 +225,7 @@ smoother_server:
       max_its: 1000
       do_refinement: True
 
-behavior_server:
+recoveries_server:
   ros__parameters:
     costmap_topic: local_costmap/costmap_raw
     footprint_topic: local_costmap/published_footprint
@@ -239,6 +239,7 @@ behavior_server:
       plugin: "nav2_behaviors/Wait"
     global_frame: odom
     robot_base_frame: base_link
+    transform_timeout: 0.3
     transform_tolerance: 0.6
     use_sim_time: true
     simulate_ahead_time: 2.0
@@ -260,21 +261,6 @@ waypoint_follower:
       plugin: "nav2_waypoint_follower::WaitAtWaypoint"
       enabled: True
       waypoint_pause_duration: 200
-
-velocity_smoother:
-  ros__parameters:
-    use_sim_time: True
-    smoothing_frequency: 20.0
-    scale_velocities: False
-    feedback: "OPEN_LOOP"
-    max_velocity: [5.0, 0.0, 1.7]
-    min_velocity: [-5.0, 0.0, -1.7]
-    max_accel: [2.5, 0.0, 3.2]
-    max_decel: [-2.5, 0.0, -3.2]
-    odom_topic: "odometry/local"
-    odom_duration: 0.1
-    deadband_velocity: [0.0, 0.0, 0.0]
-    velocity_timeout: 1.0
 
 ekf_filter_node_odom:
   ros__parameters:

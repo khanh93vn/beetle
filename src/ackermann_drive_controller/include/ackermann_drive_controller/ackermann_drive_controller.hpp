@@ -26,6 +26,8 @@
 
 namespace ackermann_drive_controller
 {
+using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+
 class AckermannDriveController : public controller_interface::ControllerInterface
 {
   using Twist = geometry_msgs::msg::TwistStamped;
@@ -45,30 +47,30 @@ public:
     const rclcpp::Time & time, const rclcpp::Duration & period) override;
 
   ACKERMANN_DRIVE_CONTROLLER_PUBLIC
-  controller_interface::CallbackReturn on_init() override;
+  CallbackReturn on_init() override;
 
   ACKERMANN_DRIVE_CONTROLLER_PUBLIC
-  controller_interface::CallbackReturn on_configure(
+  CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override;
 
   ACKERMANN_DRIVE_CONTROLLER_PUBLIC
-  controller_interface::CallbackReturn on_activate(
+  CallbackReturn on_activate(
     const rclcpp_lifecycle::State & previous_state) override;
 
   ACKERMANN_DRIVE_CONTROLLER_PUBLIC
-  controller_interface::CallbackReturn on_deactivate(
+  CallbackReturn on_deactivate(
     const rclcpp_lifecycle::State & previous_state) override;
 
   ACKERMANN_DRIVE_CONTROLLER_PUBLIC
-  controller_interface::CallbackReturn on_cleanup(
+  CallbackReturn on_cleanup(
     const rclcpp_lifecycle::State & previous_state) override;
 
   ACKERMANN_DRIVE_CONTROLLER_PUBLIC
-  controller_interface::CallbackReturn on_error(
+  CallbackReturn on_error(
     const rclcpp_lifecycle::State & previous_state) override;
 
   ACKERMANN_DRIVE_CONTROLLER_PUBLIC
-  controller_interface::CallbackReturn on_shutdown(
+  CallbackReturn on_shutdown(
     const rclcpp_lifecycle::State & previous_state) override;
 
 protected:
@@ -79,7 +81,7 @@ protected:
   };
 
   const char * feedback_type() const;
-  controller_interface::CallbackReturn configure_joint(
+  CallbackReturn configure_joint(
     const std::string & joint_name, const char * interface_name,
     const char * command_interface_name);
 

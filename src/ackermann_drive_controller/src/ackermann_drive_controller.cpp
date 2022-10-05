@@ -35,7 +35,7 @@ const char * AckermannDriveController::feedback_type() const
   return odom_params_.position_feedback ? HW_IF_POSITION : HW_IF_VELOCITY;
 }
 
-controller_interface::CallbackReturn AckermannDriveController::on_init()
+CallbackReturn AckermannDriveController::on_init()
 {
   try
   {
@@ -94,10 +94,10 @@ controller_interface::CallbackReturn AckermannDriveController::on_init()
   catch (const std::exception & e)
   {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
-    return controller_interface::CallbackReturn::ERROR;
+    return CallbackReturn::ERROR;
   }
 
-  return controller_interface::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
 InterfaceConfiguration AckermannDriveController::command_interface_configuration() const
@@ -319,7 +319,7 @@ controller_interface::return_type AckermannDriveController::update(
   return controller_interface::return_type::OK;
 }
 
-controller_interface::CallbackReturn AckermannDriveController::on_configure(
+CallbackReturn AckermannDriveController::on_configure(
   const rclcpp_lifecycle::State &)
 {
   auto logger = get_node()->get_logger();
@@ -417,7 +417,7 @@ controller_interface::CallbackReturn AckermannDriveController::on_configure(
 
   if (!reset())
   {
-    return controller_interface::CallbackReturn::ERROR;
+    return CallbackReturn::ERROR;
   }
 
   if (publish_limited_velocity_)
@@ -525,10 +525,10 @@ controller_interface::CallbackReturn AckermannDriveController::on_configure(
   odometry_transform_message.transforms.front().child_frame_id = odom_params_.base_frame_id;
 
   previous_update_timestamp_ = get_node()->get_clock()->now();
-  return controller_interface::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn AckermannDriveController::on_activate(
+CallbackReturn AckermannDriveController::on_activate(
   const rclcpp_lifecycle::State &)
 {
   const auto left_result =
@@ -541,12 +541,12 @@ controller_interface::CallbackReturn AckermannDriveController::on_activate(
     configure_joint(right_steering_name_, HW_IF_POSITION, HW_IF_POSITION);
 
   if (
-    left_result == controller_interface::CallbackReturn::ERROR ||
-    right_result == controller_interface::CallbackReturn::ERROR ||
-    left_result_steer == controller_interface::CallbackReturn::ERROR ||
-    right_result_steer == controller_interface::CallbackReturn::ERROR)
+    left_result == CallbackReturn::ERROR ||
+    right_result == CallbackReturn::ERROR ||
+    left_result_steer == CallbackReturn::ERROR ||
+    right_result_steer == CallbackReturn::ERROR)
   {
-    return controller_interface::CallbackReturn::ERROR;
+    return CallbackReturn::ERROR;
   }
   registered_left_wheel_handle_ = &registered_joint_handles_[0];
   registered_right_wheel_handle_ = &registered_joint_handles_[1];
@@ -557,35 +557,35 @@ controller_interface::CallbackReturn AckermannDriveController::on_activate(
   subscriber_is_active_ = true;
 
   RCLCPP_DEBUG(get_node()->get_logger(), "Subscriber and publisher are now active.");
-  return controller_interface::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn AckermannDriveController::on_deactivate(
+CallbackReturn AckermannDriveController::on_deactivate(
   const rclcpp_lifecycle::State &)
 {
   subscriber_is_active_ = false;
-  return controller_interface::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn AckermannDriveController::on_cleanup(
+CallbackReturn AckermannDriveController::on_cleanup(
   const rclcpp_lifecycle::State &)
 {
   if (!reset())
   {
-    return controller_interface::CallbackReturn::ERROR;
+    return CallbackReturn::ERROR;
   }
 
   received_velocity_msg_ptr_.set(std::make_shared<Twist>());
-  return controller_interface::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn AckermannDriveController::on_error(const rclcpp_lifecycle::State &)
+CallbackReturn AckermannDriveController::on_error(const rclcpp_lifecycle::State &)
 {
   if (!reset())
   {
-    return controller_interface::CallbackReturn::ERROR;
+    return CallbackReturn::ERROR;
   }
-  return controller_interface::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
 bool AckermannDriveController::reset()
@@ -607,10 +607,10 @@ bool AckermannDriveController::reset()
   return true;
 }
 
-controller_interface::CallbackReturn AckermannDriveController::on_shutdown(
+CallbackReturn AckermannDriveController::on_shutdown(
   const rclcpp_lifecycle::State &)
 {
-  return controller_interface::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
 void AckermannDriveController::halt()
@@ -621,7 +621,7 @@ void AckermannDriveController::halt()
   }
 }
 
-controller_interface::CallbackReturn AckermannDriveController::configure_joint(
+CallbackReturn AckermannDriveController::configure_joint(
   const std::string & joint_name, const char * state_interface_name,
   const char * command_interface_name)
 {
@@ -637,7 +637,7 @@ controller_interface::CallbackReturn AckermannDriveController::configure_joint(
   if (state_handle == state_interfaces_.cend())
   {
     RCLCPP_ERROR(logger, "Unable to obtain joint state handle for %s", joint_name.c_str());
-    return controller_interface::CallbackReturn::ERROR;
+    return CallbackReturn::ERROR;
   }
 
   const auto command_handle = std::find_if(
@@ -651,13 +651,13 @@ controller_interface::CallbackReturn AckermannDriveController::configure_joint(
   if (command_handle == command_interfaces_.end())
   {
     RCLCPP_ERROR(logger, "Unable to obtain joint command handle for %s", joint_name.c_str());
-    return controller_interface::CallbackReturn::ERROR;
+    return CallbackReturn::ERROR;
   }
 
   registered_joint_handles_.emplace_back(
     JointHandle{std::ref(*state_handle), std::ref(*command_handle)});
 
-  return controller_interface::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 }  // namespace ackermann_drive_controller
 
