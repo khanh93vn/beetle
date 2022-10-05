@@ -22,6 +22,8 @@ def generate_launch_description():
     bringup_dir = FindPackageShare(package='nav2_bringup').find('nav2_bringup')
     default_world_file = os.path.join(beetle_gazebo_dir, 'worlds/ctu_college_of_tech_workshop.world')
     default_rviz_config_file = os.path.join(beetle_nav_dir, 'rviz/default_view.rviz')
+    default_nav_to_pose_bt_xml = os.path.join(beetle_nav_dir, 'behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml')
+    default_nav_through_poses_bt_xml = os.path.join(beetle_nav_dir, 'behavior_trees/navigate_through_poses_w_replanning_and_recovery.xml')
 
     # Create launch configuration variables
     autostart = LaunchConfiguration('autostart')
@@ -39,7 +41,9 @@ def generate_launch_description():
     # Rewrite params in files
     param_substitutions = {
         'use_sim_time': use_sim_time,
-        'yaml_filename': map_yaml_file}
+        'yaml_filename': map_yaml_file,
+        'default_nav_to_pose_bt_xml': default_nav_to_pose_bt_xml,
+        'default_nav_through_poses_bt_xml': default_nav_through_poses_bt_xml}
 
     configured_params = RewrittenYaml(
         source_file=params_file,
@@ -123,7 +127,7 @@ def generate_launch_description():
                 os.path.join(bringup_dir, 'launch', 'navigation_launch.py')),
             launch_arguments={'use_sim_time': use_sim_time,
                               'autostart': autostart,
-                              'params_file': params_file,
+                              'params_file': configured_params,
                               'use_composition': use_composition,
                               'use_respawn': use_respawn,
                               'container_name': 'nav2_container'}.items())])
