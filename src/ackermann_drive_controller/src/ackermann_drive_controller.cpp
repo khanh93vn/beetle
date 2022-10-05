@@ -630,7 +630,7 @@ CallbackReturn AckermannDriveController::configure_joint(
     state_interfaces_.cbegin(), state_interfaces_.cend(),
     [&joint_name, &state_interface_name](const auto & interface)
     {
-      return interface.get_prefix_name() == joint_name &&
+      return interface.get_name() == joint_name &&
              interface.get_interface_name() == state_interface_name;
     });
 
@@ -644,7 +644,7 @@ CallbackReturn AckermannDriveController::configure_joint(
     command_interfaces_.begin(), command_interfaces_.end(),
     [&joint_name, &command_interface_name](const auto & interface)
     {
-      return interface.get_prefix_name() == joint_name &&
+      return interface.get_name() == joint_name &&
              interface.get_interface_name() == command_interface_name;
     });
 
