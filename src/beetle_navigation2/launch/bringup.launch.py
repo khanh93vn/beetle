@@ -20,6 +20,7 @@ def generate_launch_description():
     beetle_gazebo_dir = FindPackageShare(package='beetle_gazebo').find('beetle_gazebo')
     beetle_nav_dir = FindPackageShare(package='beetle_navigation2').find('beetle_navigation2')
     bringup_dir = FindPackageShare(package='nav2_bringup').find('nav2_bringup')
+    default_world_file = os.path.join(beetle_gazebo_dir, 'worlds/ctu_college_of_tech_workshop.world')
     default_rviz_config_file = os.path.join(beetle_nav_dir, 'rviz/default_view.rviz')
 
     # Create launch configuration variables
@@ -31,6 +32,7 @@ def generate_launch_description():
     use_respawn = LaunchConfiguration('use_respawn')
     rviz_config_file = LaunchConfiguration('rviz_config_file')
     params_file = LaunchConfiguration('params_file')
+    world_file = LaunchConfiguration('world_file')
     map_yaml_file = LaunchConfiguration('map')
     log_level = LaunchConfiguration('log_level')
 
@@ -72,6 +74,9 @@ def generate_launch_description():
         'params_file',
         default_value=os.path.join(beetle_nav_dir, 'config', 'navigation_params.yaml'),
         description='Full path to the ROS2 parameters file to use for all launched nodes')
+    declare_world_file_cmd = DeclareLaunchArgument(
+        name='world_file', default_value=default_world_file,
+        description='Absolute path to world file to launch with Gazebo')
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
         name='rviz_config_file', default_value=default_rviz_config_file,
         description='Absolute path to rviz config file')
@@ -91,6 +96,7 @@ def generate_launch_description():
         launch_arguments={'use_sim_time': use_sim_time,
                           'use_rviz': use_rviz,
                           'params_file': params_file,
+                          'world_file': world_file,
                           'rviz_config_file': rviz_config_file,
                           'log_level': log_level}.items())
     bringup_cmd_group = GroupAction([
@@ -137,6 +143,7 @@ def generate_launch_description():
     ld.add_action(declare_use_respawn_cmd)
     ld.add_action(declare_rviz_config_file_cmd)
     ld.add_action(declare_params_file_cmd)
+    ld.add_action(declare_world_file_cmd)
     ld.add_action(declare_map_yaml_cmd)
     ld.add_action(declare_log_level_cmd)
 

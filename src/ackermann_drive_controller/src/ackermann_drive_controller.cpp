@@ -256,12 +256,12 @@ controller_interface::return_type AckermannDriveController::update(
     fabs(linear_command) / steer.min_turning_radius;
   if (angular_command > angular_command_limit)
   {
-    RCLCPP_WARN(logger, "Maximum turning rate limit exceeded: %f", angular_command_limit);
+    RCLCPP_WARN_ONCE(logger, "Maximum turning rate limit exceeded: %f", angular_command_limit);
     angular_command = angular_command_limit;
   }
   else if (angular_command < -angular_command_limit)
   {
-    RCLCPP_WARN(logger, "Minimum turning rate limit exceeded: %f", -angular_command_limit);
+    RCLCPP_WARN_ONCE(logger, "Minimum turning rate limit exceeded: %f", -angular_command_limit);
     angular_command = -angular_command_limit;
   }
 

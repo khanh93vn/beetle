@@ -12,17 +12,26 @@ from launch_ros.substitutions import FindPackageShare
 def generate_launch_description():
     beetle_desc_dir = FindPackageShare(package='beetle_description').find('beetle_description')
     beetle_gazebo_dir = FindPackageShare(package='beetle_gazebo').find('beetle_gazebo')
+    launch_dir = os.path.join(beetle_gazebo_dir, 'launch')
+    default_world_file = os.path.join(beetle_gazebo_dir, 'worlds/ctu_college_of_tech_workshop.world')
     default_controller_yaml_file = os.path.join(beetle_gazebo_dir, 'config/ackermann_controller.yaml')
     default_rviz_config_file = os.path.join(beetle_gazebo_dir, 'rviz/default_view.rviz')
 
     # Create launch configuration variables
+    headless = LaunchConfiguration('headless')
     use_sim_time = LaunchConfiguration('use_sim_time')
     use_rviz = LaunchConfiguration('use_rviz')
     params_file = LaunchConfiguration('params_file')
+    world_file = LaunchConfiguration('world_file')
     rviz_config_file = LaunchConfiguration('rviz_config_file')
     log_level = LaunchConfiguration('log_level')
 
     # Define launch arguments
+    headless = LaunchConfiguration('headless')
+    declare_headless_cmd = DeclareLaunchArgument(
+        'headless',
+        default_value='false',
+        description='Whether to start gzclient')
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         'use_sim_time',
         default_value='true',
@@ -33,14 +42,17 @@ def generate_launch_description():
     declare_params_file_cmd = DeclareLaunchArgument(
         name='params_file', default_value=default_controller_yaml_file,
         description='Absolute path to controller yaml config file')
+    declare_world_file_cmd = DeclareLaunchArgument(
+        name='world_file', default_value=default_world_file,
+        description='Absolute path to world file to launch with Gazebo')
     declare_rviz_config_file_cmd = DeclareLaunchArgument(
         name='rviz_config_file', default_value=default_rviz_config_file,
         description='Absolute path to rviz config file')
     declare_log_level_cmd = DeclareLaunchArgument(
         'log_level', default_value='info',
         description='log level')
-    pose = {'x': LaunchConfiguration('x_pose', default='0.00'),
-            'y': LaunchConfiguration('y_pose', default='0.00'),
+    pose = {'x': LaunchConfiguration('x_pose', default='-12.00'),
+            'y': LaunchConfiguration('y_pose', default='10.00'),
             'z': LaunchConfiguration('z_pose', default='0.70'),
             'R': LaunchConfiguration('roll', default='0.00'),
             'P': LaunchConfiguration('pitch', default='0.00'),
@@ -50,11 +62,14 @@ def generate_launch_description():
                                 ' beetle_controller_yaml_file:=', params_file])
 
     # Define actions
-    start_gazebo = ExecuteProcess(
-        cmd=['gazebo', '--verbose',
-             '-s', 'libgazebo_ros_init.so',
-             '-s', 'libgazebo_ros_factory.so'],
-        output='screen')
+    start_gazebo_server = ExecuteProcess(
+        cmd=['gzserver', '--verbose', '-s', 'libgazebo_ros_init.so',
+             '-s', 'libgazebo_ros_factory.so', world_file],
+        cwd=[launch_dir], output='screen')
+    start_gazebo_client = ExecuteProcess(
+        condition=UnlessCondition(headless),
+        cmd=['gzclient'],
+        cwd=[launch_dir], output='screen')
     start_gazebo_spawner = Node(
         package='gazebo_ros',
         executable='spawn_entity.py',
@@ -106,9 +121,11 @@ def generate_launch_description():
     ld = launch.LaunchDescription()
 
     # Declare launch options
+    ld.add_action(declare_headless_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_use_rviz_cmd)
     ld.add_action(declare_params_file_cmd)
+    ld.add_action(declare_world_file_cmd)
     ld.add_action(declare_rviz_config_file_cmd)
     ld.add_action(declare_log_level_cmd)
 
@@ -116,13 +133,12 @@ def generate_launch_description():
     ld.add_action(load_ackermann_drive_base_ctrl_event)
     # ld.add_action(load_joint_state_ctrl_event)
 
-    # Add conditioned actions
-    ld.add_action(start_rviz)
-
     # Add actions
-    ld.add_action(start_gazebo)
+    ld.add_action(start_gazebo_server)
+    ld.add_action(start_gazebo_client)
     ld.add_action(start_gazebo_spawner)
     ld.add_action(start_joint_state_publisher)
     ld.add_action(start_robot_state_publisher)
+    ld.add_action(start_rviz)
 
     return ld
