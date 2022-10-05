@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
-<sdf version="1.6">
+<sdf version="1.6" xmlns:xacro="http://ros.org/wiki/xacro">
   <world name="default">
-
+    <xacro:arg name="api_key" default=""/>
     <include>
       <uri>model://sun</uri>
     </include>
@@ -11,7 +11,7 @@
       <center>10.0325556484729 105.76789084198195</center>
       <world_size>100</world_size>
       <map_type>satellite</map_type>
-      <api_key>${}</api_key>
+      <api_key>$(arg api_key)</api_key>
       <use_cache>true</use_cache>
     </plugin>
   </world>
