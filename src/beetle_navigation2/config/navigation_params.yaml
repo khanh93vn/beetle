@@ -230,11 +230,9 @@ recoveries_server:
     costmap_topic: local_costmap/costmap_raw
     footprint_topic: local_costmap/published_footprint
     cycle_frequency: 10.0
-    recovery_plugins: ["backup", "drive_on_heading", "wait"]
+    recovery_plugins: ["backup", "wait"]
     backup:
       plugin: "nav2_recoveries/BackUp"
-    drive_on_heading:
-      plugin: "nav2_recoveries/DriveOnHeading"
     wait:
       plugin: "nav2_recoveries/Wait"
     global_frame: odom
