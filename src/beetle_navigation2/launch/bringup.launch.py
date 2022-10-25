@@ -20,7 +20,7 @@ def generate_launch_description():
     beetle_gazebo_dir = FindPackageShare(package='beetle_gazebo').find('beetle_gazebo')
     beetle_nav_dir = FindPackageShare(package='beetle_navigation2').find('beetle_navigation2')
     bringup_dir = FindPackageShare(package='nav2_bringup').find('nav2_bringup')
-    default_world_file = os.path.join(beetle_gazebo_dir, 'worlds/ctu_college_of_tech_workshop.world')
+    default_world_file = os.path.join(beetle_gazebo_dir, 'worlds/empty.world')
     default_rviz_config_file = os.path.join(beetle_nav_dir, 'rviz/default_view.rviz')
     default_nav_to_pose_bt_xml = os.path.join(beetle_nav_dir, 'behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml')
     default_nav_through_poses_bt_xml = os.path.join(beetle_nav_dir, 'behavior_trees/navigate_through_poses_w_replanning_and_recovery.xml')

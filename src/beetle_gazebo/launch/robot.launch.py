@@ -28,7 +28,7 @@ def generate_launch_description():
 
     robot_description = Command(['xacro ', os.path.join(beetle_desc_dir, 'urdf/beetle.urdf'),
                                 ' beetle_controller_yaml_file:=', params_file])
-    default_world_file = Command(['xacro ', os.path.join(beetle_gazebo_dir, 'worlds/ctu_college_of_tech_workshop.world'),
+    default_world_file = Command(['xacro ', os.path.join(beetle_gazebo_dir, 'worlds/empty.world'),
                                 ' api_key:=', api_key])
 
     # Define launch arguments
@@ -59,8 +59,14 @@ def generate_launch_description():
     declare_log_level_cmd = DeclareLaunchArgument(
         'log_level', default_value='info',
         description='log level')
-    pose = {'x': LaunchConfiguration('x_pose', default='-12.00'),
-            'y': LaunchConfiguration('y_pose', default='10.00'),
+    # pose = {'x': LaunchConfiguration('x_pose', default='-12.00'),
+    #         'y': LaunchConfiguration('y_pose', default='10.00'),
+    #         'z': LaunchConfiguration('z_pose', default='0.70'),
+    #         'R': LaunchConfiguration('roll', default='0.00'),
+    #         'P': LaunchConfiguration('pitch', default='0.00'),
+    #         'Y': LaunchConfiguration('yaw', default='0.00')}
+    pose = {'x': LaunchConfiguration('x_pose', default='0.00'),
+            'y': LaunchConfiguration('y_pose', default='0.00'),
             'z': LaunchConfiguration('z_pose', default='0.70'),
             'R': LaunchConfiguration('roll', default='0.00'),
             'P': LaunchConfiguration('pitch', default='0.00'),

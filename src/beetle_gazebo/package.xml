@@ -14,7 +14,7 @@
 
   <exec_depend>beetle_description</exec_depend>
   <exec_depend>control_msgs</exec_depend>
-  <exec_depend>diff_drive_controller</exec_depend>
+  <exec_depend>ackermann_drive_controller</exec_depend>
   <exec_depend>gazebo_ros2_control</exec_depend>
   <exec_depend>gazebo_ros</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>

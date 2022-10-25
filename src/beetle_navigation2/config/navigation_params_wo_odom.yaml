@@ -136,7 +136,7 @@ local_costmap:
         map_subscribe_transient_local: True
         enabled: True
         subscribe_to_updates: False
-        transform_tolerance: 0.3
+        transform_tolerance: 0.1
       always_send_full_costmap: True
 
 global_costmap:
@@ -160,7 +160,7 @@ global_costmap:
         map_subscribe_transient_local: True
         enabled: True
         subscribe_to_updates: False
-        transform_tolerance: 0.3
+        transform_tolerance: 0.8
       # inflation_layer:
       #   plugin: "nav2_costmap_2d::InflationLayer"
       #   cost_scaling_factor: 3.0
@@ -225,21 +225,20 @@ smoother_server:
       max_its: 1000
       do_refinement: True
 
-behavior_server:
+recoveries_server:
   ros__parameters:
     costmap_topic: local_costmap/costmap_raw
     footprint_topic: local_costmap/published_footprint
     cycle_frequency: 10.0
-    behavior_plugins: ["backup", "drive_on_heading", "wait"]
+    recovery_plugins: ["backup", "wait"]
     backup:
-      plugin: "nav2_behaviors/BackUp"
-    drive_on_heading:
-      plugin: "nav2_behaviors/DriveOnHeading"
+      plugin: "nav2_recoveries/BackUp"
     wait:
-      plugin: "nav2_behaviors/Wait"
+      plugin: "nav2_recoveries/Wait"
     global_frame: odom
     robot_base_frame: base_link
-    transform_tolerance: 0.3
+    transform_timeout: 0.3
+    transform_tolerance: 0.6
     use_sim_time: true
     simulate_ahead_time: 2.0
     max_rotational_vel: 1.0
@@ -261,21 +260,6 @@ waypoint_follower:
       enabled: True
       waypoint_pause_duration: 200
 
-velocity_smoother:
-  ros__parameters:
-    use_sim_time: True
-    smoothing_frequency: 20.0
-    scale_velocities: False
-    feedback: "OPEN_LOOP"
-    max_velocity: [5.0, 0.0, 1.7]
-    min_velocity: [-5.0, 0.0, -1.7]
-    max_accel: [2.5, 0.0, 3.2]
-    max_decel: [-2.5, 0.0, -3.2]
-    odom_topic: "odometry/local"
-    odom_duration: 0.1
-    deadband_velocity: [0.0, 0.0, 0.0]
-    velocity_timeout: 1.0
-
 ekf_filter_node_odom:
   ros__parameters:
     use_sim_time: True
@@ -292,15 +276,15 @@ ekf_filter_node_odom:
     base_link_frame: base_link
     world_frame: odom
 
-    odom0: odom
-    odom0_config: [false, false, false,
+    odom0: odometry/gps
+    odom0_config: [true, true, false,
                   false, false, false,
-                  true,  true,  true,
+                  true,  true,  false,
                   false, false, true,
                   false, false, false]
     odom0_queue_size: 10
     odom0_nodelay: true
-    odom0_differential: false
+    odom0_differential: true
     odom0_relative: false
 
     imu0: imu
@@ -311,7 +295,7 @@ ekf_filter_node_odom:
                   true,  true,  true]
     imu0_nodelay: false
     imu0_differential: false
-    imu0_relative: false
+    imu0_relative: true
     imu0_queue_size: 10
     imu0_remove_gravitational_acceleration: true
 
@@ -365,15 +349,15 @@ ekf_filter_node_map:
     base_link_frame: base_link
     world_frame: map
 
-    odom0: odom
-    odom0_config: [false, false, false,
+    odom0: odometry/gps
+    odom0_config: [true, true,  false,
                   false, false, false,
-                  true,  true,  true,
+                  true,  true,  false,
                   false, false, true,
                   false, false, false]
     odom0_queue_size: 10
     odom0_nodelay: true
-    odom0_differential: false
+    odom0_differential: true
     odom0_relative: false
 
     imu0: imu
@@ -384,7 +368,7 @@ ekf_filter_node_map:
                   true,  true,  true]
     imu0_nodelay: true
     imu0_differential: false
-    imu0_relative: false
+    imu0_relative: true
     imu0_queue_size: 10
     imu0_remove_gravitational_acceleration: true
 
