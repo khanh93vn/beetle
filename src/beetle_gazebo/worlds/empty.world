@@ -67,7 +67,7 @@
       </link>
     </model>
     <model name='arrow'>
-      <static>1</static>
+      <static>0</static>
       <link name='arrow_link'>
         <visual name='arrow_body'>
           <cast_shadows>0</cast_shadows>
@@ -81,7 +81,7 @@
           <material>
             <script>
               <uri>file://media/materials/scripts/gazebo.material</uri>
-              <name>Gazebo/Yellow</name>
+              <name>Gazebo/YellowTransparent</name>
             </script>
           </material>
         </visual>
@@ -96,10 +96,11 @@
           <material>
             <script>
               <uri>file://media/materials/scripts/gazebo.material</uri>
-              <name>Gazebo/Yellow</name>
+              <name>Gazebo/YellowTransparent</name>
             </script>
           </material>
         </visual>
+        <gravity>0</gravity>
         <self_collide>0</self_collide>
         <enable_wind>0</enable_wind>
         <kinematic>0</kinematic>
