@@ -73,9 +73,6 @@ class BeetleEvaluationManager(Node):
         self.goal_pose = PoseStamped()
         self.goal_pose.header.frame_id = 'map'
         self.current_experiment_index = 0
-        time_stamp = self.navigator.get_clock().now().to_msg().sec
-        with open(data_file_path, 'w') as file:
-            file.write(str(time_stamp) + '\n')
 
     def loop(self):
         if self.navigator.isTaskComplete():
@@ -105,6 +102,7 @@ class BeetleEvaluationManager(Node):
         self.goal_pose.pose.position.y = pose.position.y + delta_y
         self.goal_pose.pose.orientation = quaternion_from_yaw(yaw + delta_theta)
         accepted = self.navigator.goToPose(self.goal_pose)
+        self.start_time = self.navigator.get_clock().now().to_msg().sec
         goal_str = f"({delta_x:.2f}, {delta_y:.2f}, " \
                    f" {round(degrees(delta_theta))}°)"
         if accepted:
@@ -133,7 +131,7 @@ class BeetleEvaluationManager(Node):
     def collect_result(self):
         result = self.navigator.getResult()
 
-        time_stamp = self.get_clock().now().to_msg().sec
+        end_time = self.get_clock().now().to_msg().sec
         pose = self.get_entity_state(self.robot_name).pose
         distance_error = hypot(
             self.goal_pose.pose.position.y - pose.position.y,
@@ -159,7 +157,8 @@ class BeetleEvaluationManager(Node):
         self.get_logger().info(info)
         with open(data_file_path, 'a') as file:
             line = \
-                ','.join(map(str, (time_stamp, success,
+                ','.join(map(str, (self.experiment_index, success,
+                                   end_time - self.start_time,
                                    distance_error, heading_error))) \
                     + '\n'
             file.write(line)
