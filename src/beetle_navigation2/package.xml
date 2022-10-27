@@ -15,7 +15,6 @@
   <exec_depend>beetle_gazebo</exec_depend>
   <exec_depend>nav2_bringup</exec_depend>
   <exec_depend>nav2_common</exec_depend>
-  <exec_depend>nav2_container</exec_depend>
   <exec_depend>nav2_lifecycle_manager</exec_depend>
   <exec_depend>nav2_map_server</exec_depend>
 
