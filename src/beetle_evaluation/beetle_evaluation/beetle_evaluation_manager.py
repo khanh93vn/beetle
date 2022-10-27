@@ -157,7 +157,7 @@ class BeetleEvaluationManager(Node):
         self.get_logger().info(info)
         with open(data_file_path, 'a') as file:
             line = \
-                ','.join(map(str, (self.experiment_index, success,
+                ','.join(map(str, (self.current_experiment_index, success,
                                    end_time - self.start_time,
                                    distance_error, heading_error))) \
                     + '\n'
