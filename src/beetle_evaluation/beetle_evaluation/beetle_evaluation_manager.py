@@ -19,7 +19,7 @@ data_file_path = os.path.join(
     os.environ["HOME"], "Documents/data/beetle_evaluation_data.csv")
 
 # Experiment samples
-sample_distances = [6.0, 12.0]
+sample_distances = [3.0, 6.0]
 sample_directions = [-i*(pi/3) for i in range(4)]
 sample_headings = [i*(pi/4) for i in range(8)]
 timer_period = 1.0  # seconds
@@ -66,7 +66,7 @@ class BeetleEvaluationManager(Node):
 
     def reset_experiments(self):
         # Generate goals
-        self.expirements = [*product(
+        self.experiments = [*product(
                 sample_distances, sample_directions, sample_headings)]
 
         # Prepare for experiments
@@ -83,16 +83,16 @@ class BeetleEvaluationManager(Node):
                 self.collect_result()
             n = input(">>Start next experiment<<")
             try:
-                n = str(n)
+                n = int(n)
                 if 0 <= n < len(self.experiments):
                     self.current_experiment_index = n
-            except: pass
+            except ValueError: pass
             self.begin_experiment(self.current_experiment_index)
             self.current_experiment_index += 1
 
     def begin_experiment(self, experiment_index):
         self.get_logger().info(f"Chuẩn bị cho thử nghiệm #{experiment_index}")
-        r, phi, delta_theta = self.expirements[experiment_index]
+        r, phi, delta_theta = self.experiments[experiment_index]
         pose = self.get_entity_state(self.robot_name).pose
         yaw = yaw_from_pose(pose)
 
