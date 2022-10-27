@@ -81,7 +81,12 @@ class BeetleEvaluationManager(Node):
         if self.navigator.isTaskComplete():
             if self.current_experiment_index > 0:
                 self.collect_result()
-            input(">>Start next experiment<<")
+            n = input(">>Start next experiment<<")
+            try:
+                n = str(n)
+                if 0 <= n < len(self.experiments):
+                    self.current_experiment_index = n
+            except: pass
             self.begin_experiment(self.current_experiment_index)
             self.current_experiment_index += 1
 
