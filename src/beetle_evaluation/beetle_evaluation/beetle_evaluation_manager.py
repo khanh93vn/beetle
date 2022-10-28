@@ -73,17 +73,22 @@ class BeetleEvaluationManager(Node):
         self.goal_pose = PoseStamped()
         self.goal_pose.header.frame_id = 'map'
         self.current_experiment_index = 0
+        self.auto = False
 
     def loop(self):
         if self.navigator.isTaskComplete():
             if self.current_experiment_index > 0:
                 self.collect_result()
-            n = input(">>Start next experiment<<")
-            try:
-                n = int(n) - 1
-                if 0 <= n < len(self.experiments):
-                    self.current_experiment_index = n
-            except ValueError: pass
+            if not self.auto:
+                n = input(">>Start next experiment<<")
+                try:
+                    n = int(n) - 1
+                    if 0 <= n < len(self.experiments):
+                        self.current_experiment_index = n
+                except ValueError:
+                    if n == '#':
+                        self.auto = True
+
             self.begin_experiment(self.current_experiment_index)
             self.current_experiment_index += 1
 
