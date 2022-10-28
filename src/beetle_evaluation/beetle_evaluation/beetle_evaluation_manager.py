@@ -91,6 +91,13 @@ class BeetleEvaluationManager(Node):
         self.get_logger().info(f"Chuẩn bị cho thử nghiệm #{experiment_index+1}")
         r, phi, delta_theta = self.experiments[experiment_index]
         pose = self.get_entity_state(self.robot_name).pose
+
+        initial_pose = PoseStamped()
+        initial_pose.header.frame_id = 'map'
+        initial_pose.header.stamp = self.navigator.get_clock().now().to_msg()
+        initial_pose.pose = pose
+        self.navigator.setInitialPose(initial_pose)
+
         yaw = yaw_from_pose(pose)
 
         # x, y offsets

@@ -3,7 +3,7 @@ bt_navigator:
     use_sim_time: True
     global_frame: map
     robot_base_frame: base_link
-    odom_topic: /odometry/gps
+    odom_topic: /odometry/local
     bt_loop_duration: 10
     default_server_timeout: 20
     # 'default_nav_through_poses_bt_xml' and 'default_nav_to_pose_bt_xml' are use defaults:
@@ -72,7 +72,7 @@ controller_server:
     min_y_velocity_threshold: 0.5
     min_theta_velocity_threshold: 0.001
     failure_tolerance: 0.4
-    odom_topic: "odometry/gps"
+    odom_topic: "odometry/local"
     progress_checker_plugin: "progress_checker"
     goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
     controller_plugins: ["FollowPath"]
@@ -108,7 +108,7 @@ controller_server:
       use_rotate_to_heading: false
       allow_reversing: true
       rotate_to_heading_min_angle: 0.785
-      max_angular_accel: 2.4
+      max_angular_accel: 1.2
       max_robot_pose_search_dist: 5.0
       use_interpolation: false
 
@@ -198,7 +198,7 @@ planner_server:
       angle_quantization_bins: 64         # Number of angle bins for search
       analytic_expansion_ratio: 3.5       # The ratio to attempt analytic expansions during search for final approach.
       analytic_expansion_max_length: 3.0  # For Hybrid/Lattice nodes: The maximum length of the analytic expansion to be considered valid to prevent unsafe shortcutting
-      minimum_turning_radius: 1.2         # minimum turning radius in m of path / vehicle
+      minimum_turning_radius: 1.5         # minimum turning radius in m of path / vehicle
       reverse_penalty: 2.0                # Penalty to apply if motion is reversing, must be => 1
       change_penalty: 0.0                 # Penalty to apply if motion is changing directions (L to R), must be >= 0
       non_straight_penalty: 1.2           # Penalty to apply if motion is non-straight, must be => 1
@@ -271,7 +271,7 @@ velocity_smoother:
     min_velocity: [-5.0, 0.0, -1.7]
     max_accel: [2.5, 0.0, 3.2]
     max_decel: [-2.5, 0.0, -3.2]
-    odom_topic: "odometry/gps"
+    odom_topic: "odometry/local"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
     velocity_timeout: 1.0
