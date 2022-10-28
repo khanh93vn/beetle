@@ -80,7 +80,7 @@ class BeetleEvaluationManager(Node):
                 self.collect_result()
             n = input(">>Start next experiment<<")
             try:
-                n = int(n)
+                n = int(n) - 1
                 if 0 <= n < len(self.experiments):
                     self.current_experiment_index = n
             except ValueError: pass
@@ -88,7 +88,7 @@ class BeetleEvaluationManager(Node):
             self.current_experiment_index += 1
 
     def begin_experiment(self, experiment_index):
-        self.get_logger().info(f"Chuẩn bị cho thử nghiệm #{experiment_index}")
+        self.get_logger().info(f"Chuẩn bị cho thử nghiệm #{experiment_index+1}")
         r, phi, delta_theta = self.experiments[experiment_index]
         pose = self.get_entity_state(self.robot_name).pose
         yaw = yaw_from_pose(pose)
@@ -106,10 +106,10 @@ class BeetleEvaluationManager(Node):
         goal_str = f"({delta_x:.2f}, {delta_y:.2f}, " \
                    f" {round(degrees(delta_theta))}°)"
         if accepted:
-            info = f"Bắt đầu thử nghiệm #{self.current_experiment_index}: " \
+            info = f"Bắt đầu thử nghiệm #{experiment_index+1}: " \
                    f"Di chuyển đến "
         else:
-            info = f"Thử nghiệm #{self.current_experiment_index} thất bại: " \
+            info = f"Thử nghiệm #{experiment_index+1} thất bại: " \
                    f"Hệ thống từ chối hoạch định đến "
 
         self.get_logger().info(info + goal_str)
