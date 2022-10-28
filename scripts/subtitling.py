@@ -8,7 +8,7 @@ import pandas as pd
 
 data_path = "~/Documents/data/beetle_evaluation_data.csv"
 # srt_path = "~/Documents/phu-de.srt"
-srt_path = "../../phu-de.srt"
+srt_path = "phu-de.srt"
 
 def format_time(t):
     s = t // 10
