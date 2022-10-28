@@ -165,7 +165,7 @@ class BeetleEvaluationManager(Node):
         with open(data_file_path, 'a') as file:
             line = \
                 ','.join(map(str, (self.current_experiment_index, success,
-                                   end_time - self.start_time,
+                                   self.start_time, end_time - self.start_time,
                                    distance_error, heading_error))) \
                     + '\n'
             file.write(line)
