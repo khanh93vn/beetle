@@ -19,7 +19,7 @@ data_file_path = os.path.join(
     os.environ["HOME"], "Documents/data/beetle_evaluation_data.csv")
 
 # Experiment samples
-sample_distances = [3.0, 6.0]
+sample_distances = [2.5, 5.0]
 sample_directions = [-i*(pi/3) for i in range(4)]
 sample_headings = [i*(pi/4) for i in range(8)]
 timer_period = 1.0  # seconds
