@@ -266,13 +266,13 @@ controller_interface::return_type AckermannDriveController::update(
   }
 
   // Compute wheels velocities:
-  const double velocity_left =
+  double velocity_left =
     (linear_command - angular_command * wheel_separation / 2.0) / left_wheel_radius;
-  const double velocity_right =
+  double velocity_right =
     (linear_command + angular_command * wheel_separation / 2.0) / right_wheel_radius;
 
   // Compute steering angles
-  double alpha1 = 0, alpha2 = 0;
+  static double alpha1 = 0, alpha2 = 0;
   if (angular_command != 0 && linear_command != 0)
   {
     alpha1 = atan(steer.wheel_base*angular_command/(linear_command - angular_command*steer.pivot_distance/2));
@@ -289,19 +289,23 @@ controller_interface::return_type AckermannDriveController::update(
   // Limit alpha1 and alpha2 rate
   if (alpha1 - left_steering_angle > da_limit)
   {
+    velocity_left *= left_steering_angle/alpha1;
     alpha1 = left_steering_angle + da_limit;
   }
   else if (alpha1 - left_steering_angle < -da_limit)
   {
+    velocity_left *= left_steering_angle/alpha1;
     alpha1 = left_steering_angle - da_limit;
   }
 
   if (alpha2 - right_steering_angle > da_limit)
   {
+    velocity_right *= right_steering_angle/alpha2;
     alpha2 = right_steering_angle + da_limit;
   }
   else if (alpha2 - right_steering_angle < -da_limit)
   {
+    velocity_right *= right_steering_angle/alpha2;
     alpha2 = right_steering_angle - da_limit;
   }
 
