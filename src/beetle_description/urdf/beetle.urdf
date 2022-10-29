@@ -3,6 +3,8 @@
   <!-- Define arguments -->
   <xacro:arg name="beetle_controller_yaml_file"
              default="$(find beetle_gazebo)/config/ackermann_controller.yaml"/>
+  <!-- <xacro:include filename="$(find mastering_ros_robot_description_pkg)/urdf/sensors/xtion_pro_live.urdf.xacro"/> -->
+  <xacro:include filename="basic_shapes.xacro.xml"/>
 
   <!-- Define robot's inertial constants -->
   <xacro:property name="chassis_mass" value="40.0"/>
@@ -57,90 +59,18 @@
   <xacro:property name="steering_link_radius" value="0.020"/>
   <xacro:property name="steering_link_length" value="0.082"/>
 
+  <xacro:property name="steering_arm_thickness" value="0.05"/>
+  <xacro:property name="steering_arm_width" value="0.040"/>
+  <xacro:property name="steering_arm_length" value="0.1389"/>
+  <xacro:property name="steering_arm_angle" value="2.7816883085360424"/>
+  <!-- 159.379 degrees -->
+
   <xacro:property name="control_box_width" value="0.300"/>
   <xacro:property name="control_box_height" value="0.100"/>
   <xacro:property name="control_box_thickness" value="0.0005"/>
   <xacro:property name="control_box_xoff" value="0.301"/>
 
-  <!-- Define intertial property macros  -->
-  <xacro:macro name="box_inertia" params="m l w h x:=0">
-    <inertial>
-      <origin xyz="${x} 0 0"/>
-      <mass value="${m}"/>
-      <inertia ixx="${(m/12) * (w*w+h*h)}"   ixy="0.0" ixz="0.0"
-               iyy="${(m/12) * (h*h + l*l)}" iyz="0.0"
-               izz="${(m/12) * (l*l + w*w)}" />
-    </inertial>
-  </xacro:macro>
-
-  <xacro:macro name="cylinder_inertia" params="m r h z:=0">
-    <inertial>
-      <origin xyz="0 0 ${z}"/>
-      <mass value="${m}"/>
-      <inertia ixx="${(m/12) * (3*r*r + h*h)}" ixy = "0" ixz = "0"
-               iyy="${(m/12) * (3*r*r + h*h)}" iyz = "0"
-               izz="${(m/2) * (r*r)}"/>
-    </inertial>
-  </xacro:macro>
-
-  <xacro:macro name="sphere_inertia" params="m r">
-    <inertial>
-      <mass value="${m}"/>
-      <inertia ixx="${(2/5) * m * (r*r)}" ixy="0.0" ixz="0.0"
-               iyy="${(2/5) * m * (r*r)}" iyz="0.0"
-               izz="${(2/5) * m * (r*r)}"/>
-    </inertial>
-  </xacro:macro>
-
   <!-- Define other macros  -->
-  <xacro:macro name="cylinder_link"
-         params="prefix:=^ mass:=^ radius:=^ length:=^
-                 zoff:=^|0 *visual_material">
-    <link name="${prefix}_link">
-      <visual>
-        <origin xyz="0 0 ${zoff}"/>
-        <geometry>
-          <cylinder radius="${radius}" length="${length}"/>
-        </geometry>
-        <xacro:insert_block name="visual_material" />
-      </visual>
-
-      <collision>
-        <origin xyz="0 0 ${zoff}"/>
-        <geometry>
-          <cylinder radius="${radius}" length="${length}"/>
-        </geometry>
-      </collision>
-
-      <xacro:cylinder_inertia m="${mass}" r="${radius}"
-                              h="${length}" z="${zoff}"/>
-    </link>
-  </xacro:macro>
-
-  <xacro:macro name="box_link"
-         params="prefix:=^ mass:=^ length:=^ width:=^ height
-                 xoff:=^|0 *visual_material">
-    <link name="${prefix}_link">
-      <visual>
-        <origin xyz="${xoff} 0 0"/>
-        <geometry>
-          <box size="${length} ${width} ${height}"/>
-        </geometry>
-        <xacro:insert_block name="visual_material" />
-      </visual>
-
-      <collision>
-        <origin xyz="${xoff} 0 0"/>
-        <geometry>
-          <box size="${length} ${width} ${height}"/>
-        </geometry>
-      </collision>
-
-      <xacro:box_inertia m="${mass}" l="${length}" w="${width}"
-                         h="${height}" x="${xoff}"/>
-    </link>
-  </xacro:macro>
-
   <!-- Robot Chassis -->
   <link name="base_link">
     <!-- Chassis visuals -->
@@ -319,7 +249,7 @@
                                     yoff=${pivot_distance/2}
                                     zoff=${front_axle_zoff}
                                     reflect">
-    <xacro:cylinder_link>
+    <xacro:cylinder_link collision="0">
       <material name="Cyan">
         <color rgba="0 1.0 1.0 1.0"/>
       </material>
@@ -380,7 +310,7 @@
                            mass="${rim_mass}"
                            radius="${rim_radius}"
                            length="${rim_width}"
-                           zoff="0">
+                           zoff="0" collision="0">
         <material name="Cyan">
           <color rgba="0 1.0 1.0 1.0"/>
         </material>
@@ -453,7 +383,8 @@
   </gazebo>
 
   <!-- IMU sensor -->
-  <xacro:box_link prefix="imu" mass="0.01" length="0.01" width="0.1" height="0.002">
+  <xacro:box_link prefix="imu" mass="0.01" length="0.01"
+                  width="0.1" height="0.002" collision="0">
     <null/>
   </xacro:box_link>
 
@@ -535,7 +466,8 @@
   </gazebo>
 
   <!-- GPS -->
-  <xacro:box_link prefix="gps" mass="0.01" length="0.01" width="0.01" height="0.002">
+  <xacro:box_link prefix="gps" mass="0.01" length="0.01"
+                  width="0.01" height="0.002" collision="0">
     <null/>
   </xacro:box_link>
 
