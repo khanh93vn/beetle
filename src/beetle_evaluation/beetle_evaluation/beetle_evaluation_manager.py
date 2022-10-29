@@ -57,11 +57,12 @@ class BeetleEvaluationManager(Node):
 
         # Set initial pose
         self.get_logger().info("Đang giúp xe set trạng thái đầu...")
-        initial_pose = PoseStamped()
-        initial_pose.header.frame_id = 'map'
-        initial_pose.header.stamp = self.navigator.get_clock().now().to_msg()
-        initial_pose.pose = self.get_entity_state(self.robot_name).pose
-        self.navigator.setInitialPose(initial_pose)
+        self.current_pose = PoseStamped()
+        self.current_pose.header.frame_id = 'map'
+        self.current_pose.header.stamp = \
+            self.navigator.get_clock().now().to_msg()
+        self.current_pose.pose = self.get_entity_state(self.robot_name).pose
+        self.navigator.setInitialPose(self.current_pose)
         self.get_logger().info("OK")
 
     def reset_experiments(self):
@@ -95,13 +96,8 @@ class BeetleEvaluationManager(Node):
     def begin_experiment(self, experiment_index):
         self.get_logger().info(f"Chuẩn bị cho thử nghiệm #{experiment_index+1}")
         r, phi, delta_theta = self.experiments[experiment_index]
-        pose = self.get_entity_state(self.robot_name).pose
-
-        initial_pose = PoseStamped()
-        initial_pose.header.frame_id = 'map'
-        initial_pose.header.stamp = self.navigator.get_clock().now().to_msg()
-        initial_pose.pose = pose
-        self.navigator.setInitialPose(initial_pose)
+        # pose = self.get_entity_state(self.robot_name).pose
+        pose = self.current_pose
 
         yaw = yaw_from_pose(pose)
 
@@ -142,6 +138,7 @@ class BeetleEvaluationManager(Node):
 
     def collect_result(self):
         result = self.navigator.getResult()
+        self.current_pose = self.navigator.getFeedback().current_pose
 
         end_time = self.get_clock().now().to_msg().sec
         pose = self.get_entity_state(self.robot_name).pose

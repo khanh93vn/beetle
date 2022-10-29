@@ -17,4 +17,3 @@ nav.setInitialPose(initial_pose)
 pose = PoseStamped()
 pose.header.frame_id = 'map'
 pose.header.stamp = nav.get_clock().now().to_msg()
-path = nav.
