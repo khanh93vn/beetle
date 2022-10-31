@@ -47,8 +47,8 @@ for i, col in enumerate(input_factors):
 
 df1 = df[df["Thành công"]]
 
-g = sns.PairGrid(df1, x_vars=input_factors, y_vars=responds)
-g.map(sns.boxplot)
+g = sns.PairGrid(df1, x_vars=input_factors[0], y_vars=responds)
+g.map(sns.boxplot, hue=df1[input_factors])
 # plt.savefig("figures/figure.png", bbox_inches='tight',dpi=100)
 plt.savefig("figures/figure.png")
 plt.clf()

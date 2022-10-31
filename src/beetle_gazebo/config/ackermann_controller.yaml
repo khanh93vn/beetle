@@ -13,21 +13,22 @@ ackermann_drive_base_controller:
   ros__parameters:
     left_wheel_name: "rear_left_wheel_joint"
     right_wheel_name: "rear_right_wheel_joint"
-    left_steering_name: "left_steering_joint"
-    right_steering_name: "right_steering_joint"
+    steering_joint_name: "steering_rack_joint"
 
     wheel_separation: 1.066
     wheel_radius: 0.250
     wheel_base: 1.190
     pivot_distance: 0.803
+    max_steering_angle: 0.96
+    steering_arm_1: 0.0585
+    steering_arm_2: 0.0452
+    rack_distance: 0.0205
+    rack_limit: 0.050
+    rack_kp: 1000.0
+    rack_ki: 0.0
+    rack_kd: 0.0
 
-    max_steering_speed: 1.5707963267948966
-    # max_steering_speed: 3.141592653589793
-    max_steering_angle: 0.7853981633974483
-
-    wheel_separation_multiplier: 1.0
-    left_wheel_radius_multiplier: 1.0
-    right_wheel_radius_multiplier: 1.0
+    steer_lut_size: 200
 
     publish_rate: 50.0
     odom_frame_id: odom

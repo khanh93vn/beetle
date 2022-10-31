@@ -83,38 +83,53 @@ protected:
     const std::string & joint_name, const char * interface_name,
     const char * command_interface_name);
 
+  void generate_lookup_tables();
+  double rack_position_from_curvature(double curvature);
+  double curvature_from_rack_offset(double rack_pos);
+  double rack_offset_from_curvature_lut(double curvature);
+  double curvature_from_rack_offset_lut(double rack_offset);
+
   std::string left_wheel_name_;
   std::string right_wheel_name_;
-  std::string left_steering_name_;
-  std::string right_steering_name_;
+  std::string steering_joint_name_;
 
-  // std::vector<JointHandle> registered_left_wheel_handles_;
-  // std::vector<JointHandle> registered_right_wheel_handles_;
-  // std::vector<JointHandle> registered_left_steering_handle_;
-  // std::vector<JointHandle> registered_right_steering_handle_;
   std::vector<JointHandle> registered_joint_handles_;
   JointHandle * registered_left_wheel_handle_;
   JointHandle * registered_right_wheel_handle_;
-  JointHandle * registered_left_steering_handle_;
-  JointHandle * registered_right_steering_handle_;
+  JointHandle * registered_steering_handle_;
 
   struct WheelParams
   {
     double separation = 0.0;  // w.r.t. the midpoint of the wheel width
     double radius = 0.0;      // Assumed to be the same for both wheels
-    double separation_multiplier = 1.0;
-    double left_radius_multiplier = 1.0;
-    double right_radius_multiplier = 1.0;
   } wheel_params_;
 
   struct SteerParams
   {
     double wheel_base = 0.0;
     double pivot_distance = 0.0;
-    double max_steering_speed = 0.0;
     double max_steering_angle = 1.5707963267948966;
+    double steering_arm_1 = 0.0;
+    double steering_arm_2 = 0.0;
+    double rack_distance = 0.0;
+    double rack_limit = 0.0;
+    int lut_size = 100;
+
     double min_turning_radius = 0.0;
+    double ackermann_angle = 0.0;
+    double rack_initial_position = 0.0;
+    double curvature_limit = 0.0;
   } steer_params_;
+
+  std::vector<double> rack_offset_lut_;
+  std::vector<double> curvature_lut_;
+
+  struct ControlParams
+  {
+    double rack_kp = 50.0;
+    double rack_ki = 0.0;
+    double rack_kd = 0.0;
+  } ctrl_;
 
   struct OdometryParams
   {

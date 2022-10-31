@@ -33,7 +33,8 @@
 
   <xacro:macro name="cylinder_link"
          params="prefix:=^ mass:=^ radius:=^ length:=^
-                 zoff:=^|0 collision:=^|1 *visual_material">
+                 zoff:=^|0 collision:=^|1 gazebo_material:=^|Turquoise
+                 *visual_material">
     <link name="${prefix}_link">
       <visual>
         <origin xyz="0 0 ${zoff}"/>
@@ -55,11 +56,15 @@
       <xacro:cylinder_inertia m="${mass}" r="${radius}"
                               h="${length}" z="${zoff}"/>
     </link>
+    <gazebo reference="${prefix}_link">
+      <material>Gazebo/${gazebo_material}</material>
+    </gazebo>
   </xacro:macro>
 
   <xacro:macro name="box_link"
-         params="prefix:=^ mass:=^ length:=^ width:=^ height
-                 xoff:=^|0 collision:=^|1 *visual_material">
+         params="prefix:=^ mass:=^ length:=^ width:=^ height:=^
+                 xoff:=^|0 collision:=^|1 gazebo_material:=^|Turquoise
+                 *visual_material">
     <link name="${prefix}_link">
       <visual>
         <origin xyz="${xoff} 0 0"/>
@@ -81,5 +86,8 @@
       <xacro:box_inertia m="${mass}" l="${length}" w="${width}"
                          h="${height}" x="${xoff}"/>
     </link>
+    <gazebo reference="${prefix}_link">
+      <material>Gazebo/${gazebo_material}</material>
+    </gazebo>
   </xacro:macro>
 </shapes>

@@ -3,14 +3,15 @@
   <!-- Define arguments -->
   <xacro:arg name="beetle_controller_yaml_file"
              default="$(find beetle_gazebo)/config/ackermann_controller.yaml"/>
-  <!-- <xacro:include filename="$(find mastering_ros_robot_description_pkg)/urdf/sensors/xtion_pro_live.urdf.xacro"/> -->
   <xacro:include filename="basic_shapes.xacro.xml"/>
 
   <!-- Define robot's inertial constants -->
   <xacro:property name="chassis_mass" value="40.0"/>
   <xacro:property name="wheel_mass" value="3.0"/>
   <xacro:property name="wheel_rim_mass" value="5.0"/>
-  <xacro:property name="steering_link_mass" value="0.8"/>
+  <xacro:property name="steering_link_mass" value="0.4"/>
+  <xacro:property name="coupler_link_mass" value="0.1"/>
+  <xacro:property name="steering_arm_mass" value="0.01"/>
   <xacro:property name="bearing_friction_coeff" value="0.0015"/>
   <xacro:property name="wheel_joint_damping" value="100"/>
   <xacro:property name="steering_joint_damping" value="500"/>
@@ -59,16 +60,40 @@
   <xacro:property name="steering_link_radius" value="0.020"/>
   <xacro:property name="steering_link_length" value="0.082"/>
 
-  <xacro:property name="steering_arm_thickness" value="0.05"/>
-  <xacro:property name="steering_arm_width" value="0.040"/>
-  <xacro:property name="steering_arm_length" value="0.1389"/>
-  <xacro:property name="steering_arm_angle" value="2.7816883085360424"/>
-  <!-- 159.379 degrees -->
+  <xacro:property name="steering_rack_length" value="0.300"/>
+  <xacro:property name="steering_rack_yoff" value="0.135"/>
 
   <xacro:property name="control_box_width" value="0.300"/>
   <xacro:property name="control_box_height" value="0.100"/>
   <xacro:property name="control_box_thickness" value="0.0005"/>
   <xacro:property name="control_box_xoff" value="0.301"/>
+
+  <xacro:property name="steering_arm_thickness" value="0.005"/>
+  <xacro:property name="steering_arm_width" value="0.040"/>
+  <!-- Steering paramters -->
+  <!-- l1, l2, d, b, L = 0.0585 0.0452 0.0205 0.803 1.190 -->
+  <xacro:property name="steering_arm_length" value="0.0585"/>
+  <xacro:property name="steering_arm_length_2" value="0.0452"/>
+  <xacro:property name="rack_distance" value="0.0205"/>
+  <!-- Steering dependent variables -->
+  <xacro:property name="ackermann_angle"
+    value="${atan(pivot_distance/2*wheel_base)}"/>
+  <xacro:property name="v1"
+      value="${steering_arm_length*cos(ackermann_angle)}"/>
+  <xacro:property name="h1"
+      value="${steering_arm_length*sin(ackermann_angle)}"/>
+  <xacro:property name="v2"
+    value="${(rack_distance - v1) if (rack_distance - v1) > 0 else
+        (v1 - rack_distance)}"/>
+  <xacro:property name="h2"
+    value="${sqrt(steering_arm_length_2*steering_arm_length_2 - v2*v2)}"/>
+
+  <xacro:property name="steering_arm_angle" value="${pi/2 - ackermann_angle}"/>
+  <xacro:property name="steering_arm_angle_2"
+    value="${acos(v2/steering_arm_length_2) + ackermann_angle}"/>
+
+  <xacro:property name="coupler_link_length"
+    value="${pivot_distance - 2*(h1 + h2)}"/>
 
   <!-- Define other macros  -->
   <!-- Robot Chassis -->
@@ -226,7 +251,6 @@
                        h="${tube_width}"
                        x="${chassis_xoff}"/>
   </link>
-
   <gazebo reference="base_link">
     <material>Gazebo/Turquoise</material>
   </gazebo>
@@ -249,7 +273,7 @@
                                     yoff=${pivot_distance/2}
                                     zoff=${front_axle_zoff}
                                     reflect">
-    <xacro:cylinder_link collision="0">
+    <xacro:cylinder_link collision="0" zoff="0">
       <material name="Cyan">
         <color rgba="0 1.0 1.0 1.0"/>
       </material>
@@ -257,18 +281,123 @@
     <joint name="${prefix}_joint" type="revolute">
       <parent link="base_link"/>
       <child link="${prefix}_link"/>
-      <origin xyz="${xoff} ${reflect*yoff} 0"/>
+      <origin xyz="${xoff} ${reflect*yoff} ${front_axle_zoff}"/>
       <axis xyz="0 0 1"/>
       <damping>${steering_joint_damping}</damping>
       <friction>${bearing_friction_coeff*gravity*chassis_mass}</friction>
       <limit effort="1000.0" lower="-1.0" upper="1.0" velocity="0.5"/>
     </joint>
-    <gazebo reference="${prefix}_link">
-      <material>Gazebo/Turquoise</material>
-    </gazebo>
+
+    <xacro:box_link prefix="${prefix}_arm"
+                    xoff="${steering_arm_length/2}"
+                    mass="${steering_arm_mass}"
+                    length="${steering_arm_length+2*steering_link_radius}"
+                    width="${steering_arm_width}"
+                    height="${steering_arm_thickness}" collision="0">
+      <material name="Cyan">
+        <color rgba="0 1.0 1.0 1.0"/>
+      </material>
+    </xacro:box_link>
+    <joint name="${prefix}_arm_joint" type="fixed">
+      <parent link="${prefix}_link"/>
+      <child link="${prefix}_arm_link"/>
+      <origin xyz="0 0 ${steering_link_length/2}"
+              rpy="0 0 ${-(pi/2+steering_arm_angle)*reflect}"/>
+    </joint>
+
+    <xacro:box_link prefix="${prefix}_arm_2"
+                    xoff="${steering_arm_length_2/2}"
+                    mass="${steering_arm_mass}"
+                    length="${steering_arm_length_2+2*steering_link_radius}"
+                    width="${steering_arm_width}"
+                    height="${steering_arm_thickness}" collision="0">
+      <material name="Cyan">
+        <color rgba="0 1.0 1.0 1.0"/>
+      </material>
+    </xacro:box_link>
+    <joint name="${prefix}_arm_2_joint" type="continuous">
+      <parent link="${prefix}_arm_link"/>
+      <child link="${prefix}_arm_2_link"/>
+      <origin xyz="${steering_arm_length} 0 ${steering_link_length/2}"
+              rpy="0 0 ${(pi-steering_arm_angle_2)*reflect}"/>
+      <axis xyz="0 0 1"/>
+      <damping>${steering_joint_damping}</damping>
+      <friction>${bearing_friction_coeff*gravity*chassis_mass}</friction>
+    </joint>
+    <xacro:box_link prefix="${prefix}_coupler"
+                    xoff="${coupler_link_length/4}"
+                    mass="${coupler_link_mass/2}"
+                    length="${coupler_link_length/2+2*steering_link_radius}"
+                    width="${steering_arm_width}"
+                    height="${steering_arm_thickness}" collision="0">
+      <material name="Cyan">
+        <color rgba="0 1.0 1.0 1.0"/>
+      </material>
+    </xacro:box_link>
+    <joint name="${prefix}_coupler_joint" type="continuous">
+      <parent link="${prefix}_arm_2_link"/>
+      <child link="${prefix}_coupler_link"/>
+      <origin xyz="${steering_arm_length_2} 0 ${steering_link_length/2}"
+              rpy="0 0 ${-(pi-steering_arm_angle-steering_arm_angle_2)*reflect}"/>
+      <axis xyz="0 0 1"/>
+      <damping>${steering_joint_damping}</damping>
+      <friction>${bearing_friction_coeff*gravity*chassis_mass}</friction>
+    </joint>
   </xacro:macro>
   <xacro:steer prefix="left_steering" reflect="1"/>
   <xacro:steer prefix="right_steering" reflect="-1"/>
+  <gazebo>
+    <joint name="steering_coupler_joint" type="fixed">
+      <pose>${coupler_link_length/2} 0.0 0 0 0 0</pose>
+      <parent>left_steering_coupler_link</parent>
+      <child>right_steering_coupler_link</child>
+    </joint>
+  </gazebo>
+
+  <xacro:box_link prefix="steering_rack" mass="${steering_arm_mass}"
+                  length="${steering_arm_length}" width="${steering_arm_width}"
+                  height="${steering_arm_thickness}" collision="0">
+    <material name="Cyan">
+      <color rgba="0 1.0 1.0 1.0"/>
+    </material>
+  </xacro:box_link>
+  <joint name="steering_rack_joint" type="prismatic">
+    <parent link="right_steering_coupler_link"/>
+    <child link="steering_rack_link"/>
+    <origin xyz="${steering_rack_yoff} 0 ${steering_arm_thickness}"
+            rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit effort="1000" velocity="1.0" lower="-0.050" upper="0.050" />
+  </joint>
+  <xacro:box_link prefix="steering_rack1" mass="${steering_arm_mass}"
+                  length="${steering_arm_length}" width="${steering_arm_width}"
+                  height="${steering_arm_thickness}" collision="0">
+    <material name="Cyan">
+      <color rgba="0 1.0 1.0 1.0"/>
+    </material>
+  </xacro:box_link>
+  <joint name="steering_rack1_joint" type="prismatic">
+    <parent link="left_steering_coupler_link"/>
+    <child link="steering_rack1_link"/>
+    <origin xyz="${steering_rack_yoff} 0 ${steering_arm_thickness}"
+            rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit effort="1000" velocity="1.0" lower="-0.050" upper="0.050" />
+  </joint>
+  <gazebo>
+    <joint name="rack_base_joint" type="fixed">
+      <pose>0 0 0 0 0 0</pose>
+      <parent>base_link</parent>
+      <child>steering_rack_link</child>
+    </joint>
+  </gazebo>
+  <gazebo>
+    <joint name="rack1_base_joint" type="fixed">
+      <pose>0 0 0 0 0 0</pose>
+      <parent>base_link</parent>
+      <child>steering_rack1_link</child>
+    </joint>
+  </gazebo>
 
   <!-- Robot Wheels -->
   <xacro:macro name="wheel"
@@ -281,7 +410,7 @@
                               xoff yoff zoff reflect
                               parent_link:=base_link
                               mimic:=''">
-    <xacro:cylinder_link length="${width}" zoff="0">
+    <xacro:cylinder_link length="${width}" zoff="0" gazebo_material="DarkGrey">
       <material name="Tyre">
         <color rgba="0.1 0.1 0.1 1.0"/>
       </material>
@@ -299,9 +428,6 @@
       <damping>${wheel_joint_damping}</damping>
       <friction>${bearing_friction_coeff*gravity*chassis_mass}</friction>
     </joint>
-    <gazebo reference="${prefix}_link">
-      <material>Gazebo/DarkGrey</material>
-    </gazebo>
 
     <xacro:macro name="wheel_rim"
                  params="side prefix=^ rim_mass:=^ rim_radius:=^ rim_width:=^ " >
@@ -320,9 +446,6 @@
         <child link="${prefix}_${side}_rim_link"/>
         <origin xyz="0 0 ${(1 if side == 'outer' else -1)*reflect*(width+rim_width)/2}" />
       </joint>
-      <gazebo reference="${prefix}_${side}_rim_link">
-        <material>Gazebo/Turquoise</material>
-      </gazebo>
     </xacro:macro>
     <xacro:wheel_rim side="inner" />
     <xacro:wheel_rim side="outer" />
@@ -330,12 +453,12 @@
   </xacro:macro>
   <xacro:wheel prefix="front_left_wheel" xoff="0"
                yoff="${(wheel_track-pivot_distance)/2}"
-               zoff="${front_axle_zoff}"
+               zoff="0"
                reflect="1"
                parent_link="left_steering_link"/>
   <xacro:wheel prefix="front_right_wheel" xoff="0"
                yoff="${(wheel_track-pivot_distance)/2}"
-               zoff="${front_axle_zoff}"
+               zoff="0"
                reflect="-1"
                parent_link="right_steering_link"/>
   <xacro:wheel prefix="rear_left_wheel" xoff="0"
@@ -362,15 +485,9 @@
       <state_interface name="position"/>
       <state_interface name="velocity"/>
     </joint>
-    <joint name="left_steering_joint">
-      <command_interface name="position"/>
+    <joint name="steering_rack_joint">
+      <command_interface name="effort"/>
       <state_interface name="position"/>
-      <state_interface name="velocity"/>
-    </joint>
-    <joint name="right_steering_joint">
-      <command_interface name="position"/>
-      <state_interface name="position"/>
-      <state_interface name="velocity"/>
     </joint>
   </ros2_control>
 
@@ -462,7 +579,6 @@
         </linear_acceleration>
       </imu>
     </sensor>
-    <material>Gazebo/Turquoise</material>
   </gazebo>
 
   <!-- GPS -->
@@ -496,7 +612,6 @@
         <velocityGaussianNoise>0.5 0.5 0.5</velocityGaussianNoise>
       </plugin>
     </sensor>
-    <material>Gazebo/Turquoise</material>
   </gazebo>
 
 </robot>

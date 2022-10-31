@@ -10,7 +10,7 @@ Panels:
         - /RobotModel1/Mass Properties1
         - /TF1
       Splitter Ratio: 0.5
-    Tree Height: 283
+    Tree Height: 475
 Visualization Manager:
   Class: ""
   Displays:
@@ -59,7 +59,22 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        front_left_wheel_inner_rim_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         front_left_wheel_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        front_left_wheel_outer_rim_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        front_right_wheel_inner_rim_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -69,7 +84,37 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        front_right_wheel_outer_rim_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gps_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         imu_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_steering_arm_2_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_steering_arm_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_steering_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rear_left_wheel_inner_rim_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -79,13 +124,43 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        rear_left_wheel_outer_rim_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rear_right_wheel_inner_rim_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         rear_right_wheel_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
+        rear_right_wheel_outer_rim_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_steering_arm_2_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_steering_arm_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_steering_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
       Mass Properties:
-        Inertia: true
+        Inertia: false
         Mass: false
       Name: RobotModel
       TF Prefix: ""
@@ -101,15 +176,45 @@ Visualization Manager:
           Value: true
         base_link:
           Value: true
+        front_left_wheel_inner_rim_link:
+          Value: true
         front_left_wheel_link:
+          Value: true
+        front_left_wheel_outer_rim_link:
+          Value: true
+        front_right_wheel_inner_rim_link:
           Value: true
         front_right_wheel_link:
           Value: true
+        front_right_wheel_outer_rim_link:
+          Value: true
+        gps_link:
+          Value: true
         imu_link:
+          Value: true
+        left_steering_arm_2_link:
+          Value: true
+        left_steering_arm_link:
+          Value: true
+        left_steering_link:
+          Value: true
+        rear_left_wheel_inner_rim_link:
           Value: true
         rear_left_wheel_link:
           Value: true
+        rear_left_wheel_outer_rim_link:
+          Value: true
+        rear_right_wheel_inner_rim_link:
+          Value: true
         rear_right_wheel_link:
+          Value: true
+        rear_right_wheel_outer_rim_link:
+          Value: true
+        right_steering_arm_2_link:
+          Value: true
+        right_steering_arm_link:
+          Value: true
+        right_steering_link:
           Value: true
       Marker Scale: 0.30000001192092896
       Name: TF
@@ -120,16 +225,38 @@ Visualization Manager:
         base_link:
           base_footprint:
             {}
-          front_left_wheel_link:
-            {}
-          front_right_wheel_link:
+          gps_link:
             {}
           imu_link:
             {}
+          left_steering_link:
+            front_left_wheel_link:
+              front_left_wheel_inner_rim_link:
+                {}
+              front_left_wheel_outer_rim_link:
+                {}
+            left_steering_arm_link:
+              left_steering_arm_2_link:
+                {}
           rear_left_wheel_link:
-            {}
+            rear_left_wheel_inner_rim_link:
+              {}
+            rear_left_wheel_outer_rim_link:
+              {}
           rear_right_wheel_link:
-            {}
+            rear_right_wheel_inner_rim_link:
+              {}
+            rear_right_wheel_outer_rim_link:
+              {}
+          right_steering_link:
+            front_right_wheel_link:
+              front_right_wheel_inner_rim_link:
+                {}
+              front_right_wheel_outer_rim_link:
+                {}
+            right_steering_arm_link:
+              right_steering_arm_2_link:
+                {}
       Update Interval: 0
       Value: true
   Enabled: true
@@ -168,18 +295,18 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.09539850056171417
+      Pitch: 0.5353984832763672
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.98539799451828
+      Yaw: 0.2903980016708374
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 512
+  Height: 704
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd000000010000000000000156000001a6fc0200000001fb000000100044006900730070006c006100790073010000003d000001a6000000c900ffffff00000160000001a600000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
-  Width: 700
-  X: 666
-  Y: 77
+  QMainWindow State: 000000ff00000000fd00000001000000000000015600000266fc0200000001fb000000100044006900730070006c006100790073010000003d00000266000000c900ffffff000003b00000026600000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  Width: 1292
+  X: 74
+  Y: 27
