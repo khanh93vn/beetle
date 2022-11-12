@@ -9,13 +9,14 @@
   <xacro:property name="chassis_mass" value="40.0"/>
   <xacro:property name="wheel_mass" value="3.0"/>
   <xacro:property name="wheel_rim_mass" value="5.0"/>
-  <xacro:property name="steering_link_mass" value="0.4"/>
-  <xacro:property name="coupler_link_mass" value="0.1"/>
-  <xacro:property name="steering_arm_mass" value="0.01"/>
-  <xacro:property name="bearing_friction_coeff" value="0.0015"/>
+  <xacro:property name="steering_link_mass" value="0.5"/>
+  <xacro:property name="coupler_link_mass" value="1.0"/>
+  <xacro:property name="steering_arm_mass" value="0.5"/>
+  <xacro:property name="rack_mass" value="1.0"/>
+  <xacro:property name="bearing_friction_coeff" value="0.015"/>
   <xacro:property name="wheel_bearing_friction_coeff" value="0.0015"/>
-  <xacro:property name="wheel_joint_damping" value="100"/>
-  <xacro:property name="steering_joint_damping" value="200"/>
+  <xacro:property name="wheel_joint_damping" value="1"/>
+  <xacro:property name="steering_joint_damping" value="1"/>
   <xacro:property name="gravity" value="9.81"/>
 
   <!-- Define robot's distance constants -->
@@ -286,7 +287,7 @@
       <child link="${prefix}_link"/>
       <origin xyz="${xoff} ${reflect*yoff} ${front_axle_zoff}"/>
       <axis xyz="0 0 1"/>
-      <limit effort="1000.0" lower="-1.0" upper="1.0" velocity="0.5"/>
+      <limit effort="30000.0" lower="-1.0" upper="1.0" velocity="0.5"/>
       <dynamics damping="${steering_joint_damping}"
                 friction="${bearing_friction_coeff*gravity*chassis_mass}"/>
     </joint>
@@ -357,7 +358,7 @@
     </joint>
   </gazebo>
 
-  <xacro:box_link prefix="steering_rack" mass="${steering_arm_mass}"
+  <xacro:box_link prefix="steering_rack" mass="${rack_mass}"
                   length="${steering_arm_length}" width="${steering_arm_width}"
                   height="${steering_arm_thickness}" collision="0">
     <material name="Cyan">
@@ -370,7 +371,9 @@
     <origin xyz="${steering_rack_yoff} 0 ${steering_arm_thickness}"
             rpy="0 0 0"/>
     <axis xyz="1 0 0"/>
-    <limit effort="1000" velocity="1.0" lower="-0.050" upper="0.050" />
+    <limit effort="30000" velocity="1.0" lower="-0.050" upper="0.050" />
+    <!-- <dynamics damping="${steering_joint_damping}/"
+              friction="${bearing_friction_coeff*gravity*chassis_mass}"/> -->
   </joint>
   <gazebo>
     <joint name="rack_base_joint" type="fixed">

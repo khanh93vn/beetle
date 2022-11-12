@@ -24,7 +24,7 @@ ackermann_drive_base_controller:
     steering_arm_2: 0.0452
     rack_distance: 0.0205
     rack_limit: 0.050
-    rack_kp: 100.0
+    rack_kp: 10000.0
     rack_ki: 0.0
     rack_kd: 0.0
 
