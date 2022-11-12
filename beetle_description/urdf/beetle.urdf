@@ -12,8 +12,8 @@
   <xacro:property name="wheel_rim_mass" value="5.0"/>
   <xacro:property name="steering_link_mass" value="0.8"/>
   <xacro:property name="bearing_friction_coeff" value="0.0015"/>
-  <xacro:property name="wheel_joint_damping" value="100"/>
-  <xacro:property name="steering_joint_damping" value="500"/>
+  <xacro:property name="wheel_joint_damping" value="10"/>
+  <xacro:property name="steering_joint_damping" value="20"/>
   <xacro:property name="gravity" value="9.81"/>
 
   <!-- Define robot's distance constants -->
@@ -259,8 +259,8 @@
       <child link="${prefix}_link"/>
       <origin xyz="${xoff} ${reflect*yoff} 0"/>
       <axis xyz="0 0 1"/>
-      <damping>${steering_joint_damping}</damping>
-      <friction>${bearing_friction_coeff*gravity*chassis_mass}</friction>
+      <dynamics damping="${steering_joint_damping}"
+                friction="${bearing_friction_coeff*gravity*chassis_mass}" />
       <limit effort="1000.0" lower="-1.0" upper="1.0" velocity="0.5"/>
     </joint>
     <gazebo reference="${prefix}_link">
@@ -296,8 +296,8 @@
       <origin xyz="${xoff} ${reflect*yoff} ${zoff}"
               rpy="${-pi/2} 0 0"/>
       <axis xyz="0 0 1"/>
-      <damping>${wheel_joint_damping}</damping>
-      <friction>${bearing_friction_coeff*gravity*chassis_mass}</friction>
+      <dynamics damping="${wheel_joint_damping}"
+                friction="${bearing_friction_coeff*gravity*chassis_mass}" />
     </joint>
     <gazebo reference="${prefix}_link">
       <material>Gazebo/DarkGrey</material>
