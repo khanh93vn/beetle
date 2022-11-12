@@ -13,8 +13,9 @@
   <xacro:property name="coupler_link_mass" value="0.1"/>
   <xacro:property name="steering_arm_mass" value="0.01"/>
   <xacro:property name="bearing_friction_coeff" value="0.0015"/>
+  <xacro:property name="wheel_bearing_friction_coeff" value="0.0015"/>
   <xacro:property name="wheel_joint_damping" value="100"/>
-  <xacro:property name="steering_joint_damping" value="500"/>
+  <xacro:property name="steering_joint_damping" value="200"/>
   <xacro:property name="gravity" value="9.81"/>
 
   <!-- Define robot's distance constants -->
@@ -72,25 +73,27 @@
   <xacro:property name="steering_arm_width" value="0.040"/>
   <!-- Steering paramters -->
   <!-- l1, l2, d, b, L = 0.0585 0.0452 0.0205 0.803 1.190 -->
-  <xacro:property name="steering_arm_length" value="0.0585"/>
-  <xacro:property name="steering_arm_length_2" value="0.0452"/>
-  <xacro:property name="rack_distance" value="0.0205"/>
+  <xacro:property name="steering_arm_length" value="0.06965"/>
+  <xacro:property name="steering_arm_length_2" value="0.13943"/>
+  <xacro:property name="rack_distance" value="0.12922"/>
   <!-- Steering dependent variables -->
+  <!-- <xacro:property name="ackermann_angle"
+    value="${atan(pivot_distance/2*wheel_base)}"/> -->
   <xacro:property name="ackermann_angle"
-    value="${atan(pivot_distance/2*wheel_base)}"/>
+    value="${radians(-10)}"/>
   <xacro:property name="v1"
       value="${steering_arm_length*cos(ackermann_angle)}"/>
   <xacro:property name="h1"
       value="${steering_arm_length*sin(ackermann_angle)}"/>
   <xacro:property name="v2"
-    value="${(rack_distance - v1) if (rack_distance - v1) > 0 else
+    value="${(rack_distance - v1) if (rack_distance > v1) else
         (v1 - rack_distance)}"/>
   <xacro:property name="h2"
     value="${sqrt(steering_arm_length_2*steering_arm_length_2 - v2*v2)}"/>
 
   <xacro:property name="steering_arm_angle" value="${pi/2 - ackermann_angle}"/>
   <xacro:property name="steering_arm_angle_2"
-    value="${acos(v2/steering_arm_length_2) + ackermann_angle}"/>
+    value="${ackermann_angle - acos(v2/steering_arm_length_2)}"/>
 
   <xacro:property name="coupler_link_length"
     value="${pivot_distance - 2*(h1 + h2)}"/>
@@ -283,9 +286,9 @@
       <child link="${prefix}_link"/>
       <origin xyz="${xoff} ${reflect*yoff} ${front_axle_zoff}"/>
       <axis xyz="0 0 1"/>
-      <damping>${steering_joint_damping}</damping>
-      <friction>${bearing_friction_coeff*gravity*chassis_mass}</friction>
       <limit effort="1000.0" lower="-1.0" upper="1.0" velocity="0.5"/>
+      <dynamics damping="${steering_joint_damping}"
+                friction="${bearing_friction_coeff*gravity*chassis_mass}"/>
     </joint>
 
     <xacro:box_link prefix="${prefix}_arm"
@@ -301,7 +304,7 @@
     <joint name="${prefix}_arm_joint" type="fixed">
       <parent link="${prefix}_link"/>
       <child link="${prefix}_arm_link"/>
-      <origin xyz="0 0 ${steering_link_length/2}"
+      <origin xyz="0 0 ${steering_arm_thickness}"
               rpy="0 0 ${-(pi/2+steering_arm_angle)*reflect}"/>
     </joint>
 
@@ -318,11 +321,11 @@
     <joint name="${prefix}_arm_2_joint" type="continuous">
       <parent link="${prefix}_arm_link"/>
       <child link="${prefix}_arm_2_link"/>
-      <origin xyz="${steering_arm_length} 0 ${steering_link_length/2}"
-              rpy="0 0 ${(pi-steering_arm_angle_2)*reflect}"/>
+      <origin xyz="${steering_arm_length} 0 ${steering_arm_thickness}"
+              rpy="0 0 ${-steering_arm_angle_2*reflect}"/>
       <axis xyz="0 0 1"/>
-      <damping>${steering_joint_damping}</damping>
-      <friction>${bearing_friction_coeff*gravity*chassis_mass}</friction>
+      <dynamics damping="${steering_joint_damping}"
+                friction="${bearing_friction_coeff*gravity*chassis_mass}"/>
     </joint>
     <xacro:box_link prefix="${prefix}_coupler"
                     xoff="${coupler_link_length/4}"
@@ -337,11 +340,11 @@
     <joint name="${prefix}_coupler_joint" type="continuous">
       <parent link="${prefix}_arm_2_link"/>
       <child link="${prefix}_coupler_link"/>
-      <origin xyz="${steering_arm_length_2} 0 ${steering_link_length/2}"
-              rpy="0 0 ${-(pi-steering_arm_angle-steering_arm_angle_2)*reflect}"/>
+      <origin xyz="${steering_arm_length_2} 0 ${steering_arm_thickness}"
+              rpy="0 0 ${-(ackermann_angle-steering_arm_angle_2-pi/2)*reflect}"/>
       <axis xyz="0 0 1"/>
-      <damping>${steering_joint_damping}</damping>
-      <friction>${bearing_friction_coeff*gravity*chassis_mass}</friction>
+      <dynamics damping="${steering_joint_damping}"
+                friction="${bearing_friction_coeff*gravity*chassis_mass}"/>
     </joint>
   </xacro:macro>
   <xacro:steer prefix="left_steering" reflect="1"/>
@@ -369,33 +372,11 @@
     <axis xyz="1 0 0"/>
     <limit effort="1000" velocity="1.0" lower="-0.050" upper="0.050" />
   </joint>
-  <xacro:box_link prefix="steering_rack1" mass="${steering_arm_mass}"
-                  length="${steering_arm_length}" width="${steering_arm_width}"
-                  height="${steering_arm_thickness}" collision="0">
-    <material name="Cyan">
-      <color rgba="0 1.0 1.0 1.0"/>
-    </material>
-  </xacro:box_link>
-  <joint name="steering_rack1_joint" type="prismatic">
-    <parent link="left_steering_coupler_link"/>
-    <child link="steering_rack1_link"/>
-    <origin xyz="${steering_rack_yoff} 0 ${steering_arm_thickness}"
-            rpy="0 0 0"/>
-    <axis xyz="1 0 0"/>
-    <limit effort="1000" velocity="1.0" lower="-0.050" upper="0.050" />
-  </joint>
   <gazebo>
     <joint name="rack_base_joint" type="fixed">
       <pose>0 0 0 0 0 0</pose>
       <parent>base_link</parent>
       <child>steering_rack_link</child>
-    </joint>
-  </gazebo>
-  <gazebo>
-    <joint name="rack1_base_joint" type="fixed">
-      <pose>0 0 0 0 0 0</pose>
-      <parent>base_link</parent>
-      <child>steering_rack1_link</child>
     </joint>
   </gazebo>
 
@@ -425,8 +406,8 @@
       <origin xyz="${xoff} ${reflect*yoff} ${zoff}"
               rpy="${-pi/2} 0 0"/>
       <axis xyz="0 0 1"/>
-      <damping>${wheel_joint_damping}</damping>
-      <friction>${bearing_friction_coeff*gravity*chassis_mass}</friction>
+      <dynamics damping="${wheel_joint_damping}"
+                friction="${wheel_bearing_friction_coeff*gravity*chassis_mass}"/>
     </joint>
 
     <xacro:macro name="wheel_rim"
