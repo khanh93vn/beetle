@@ -6,6 +6,8 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /GlobalPlanner1
+        - /GlobalPlanner1/Path1
       Splitter Ratio: 0.5
     Tree Height: 524
   - Class: nav2_rviz_plugins/Navigation 2
@@ -244,8 +246,8 @@ Visualization Manager:
           Head Diameter: 0.30000001192092896
           Head Length: 0.20000000298023224
           Length: 0.30000001192092896
-          Line Style: Lines
-          Line Width: 0.029999999329447746
+          Line Style: Billboards
+          Line Width: 0.15000000596046448
           Name: Path
           Offset:
             X: 0
@@ -338,7 +340,7 @@ Visualization Manager:
             Reliability Policy: Reliable
             Value: /lookahead_point
           Value: true
-      Enabled: true
+      Enabled: false
       Name: LocalPlanner
   Enabled: true
   Global Options:
@@ -368,7 +370,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 6.583293914794922
+      Distance: 16.23148536682129
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -383,10 +385,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.535398542881012
+      Pitch: 1.3503984212875366
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.31358003616333
+      Yaw: 4.9885783195495605
     Saved: ~
 Window Geometry:
   Displays:
