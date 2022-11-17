@@ -15,8 +15,11 @@ from gazebo_msgs.srv import GetEntityState, SetEntityState
 
 
 # Constants --------------------------------------------------------------------
-data_file_path = os.path.join(
-    os.environ["HOME"], "Documents/data/beetle_evaluation_data.csv")
+data_file_parent_dir = os.path.join(os.environ["HOME"], "Documents/data")
+if not os.path.exists(data_file_parent_dir):
+    os.mkdir(data_file_parent_dir)
+data_file_path = \
+    os.path.join(data_file_parent_dir, "beetle_evaluation_data.csv")
 
 # Experiment samples
 sample_distances = [2.5, 5.0]
