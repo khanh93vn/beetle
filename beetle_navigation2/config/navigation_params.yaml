@@ -429,8 +429,8 @@ navsat_transform:
     magnetic_declination_radians: 0.010821041362364843  # For lat/long 10.03307987984352, 105.76725084149514
     yaw_offset: 1.570796327  # IMU reads 0 facing magnetic north, not east
     zero_altitude: false
-    broadcast_utm_transform: true
-    publish_filtered_gps: true
+    broadcast_utm_transform: false
+    publish_filtered_gps: false
     use_odometry_yaw: false
     wait_for_datum: false
 

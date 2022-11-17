@@ -104,7 +104,7 @@ class BeetleEvaluationManager(Node):
         initial_pose.header.frame_id = 'map'
         initial_pose.header.stamp = self.navigator.get_clock().now().to_msg()
         initial_pose.pose = pose
-        self.navigator.setInitialPose(initial_pose)
+        # self.navigator.setInitialPose(initial_pose)
 
         yaw = yaw_from_pose(pose)
 
