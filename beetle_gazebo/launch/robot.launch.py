@@ -54,7 +54,7 @@ def generate_launch_description():
         name='rviz_config_file', default_value=default_rviz_config_file,
         description='Absolute path to rviz config file')
     declare_api_key_cmd = DeclareLaunchArgument(
-        name='api_key', default_value='',
+        name='api_key', default_value=" ",
         description='Google API key to download map')
     declare_log_level_cmd = DeclareLaunchArgument(
         'log_level', default_value='info',

@@ -11,20 +11,18 @@ controller_manager:
 
 ackermann_drive_base_controller:
   ros__parameters:
-    left_wheel_name: "rear_left_wheel_joint"
-    right_wheel_name: "rear_right_wheel_joint"
+    traction_joint_name: "ring_gear_joint"
     steering_joint_name: "steering_rack_joint"
 
     wheel_separation: 1.066
     wheel_radius: 0.250
     wheel_base: 1.190
     pivot_distance: 0.803
-    max_steering_angle: 0.96
     steering_arm_1: 0.0585
     steering_arm_2: 0.0452
     rack_distance: 0.0205
     rack_limit: 0.050
-    rack_kp: 10000.0
+    rack_kp: 1000.0
     rack_ki: 0.0
     rack_kd: 0.0
 

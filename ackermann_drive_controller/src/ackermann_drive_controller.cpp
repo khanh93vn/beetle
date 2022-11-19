@@ -41,8 +41,7 @@ controller_interface::CallbackReturn AckermannDriveController::on_init()
   try
   {
     // with the lifecycle node being initialized, we can declare parameters
-    auto_declare<std::string>("left_wheel_name", std::string());
-    auto_declare<std::string>("right_wheel_name", std::string());
+    auto_declare<std::string>("traction_joint_name", std::string());
     auto_declare<std::string>("steering_joint_name_", std::string());
 
     auto_declare<double>("wheel_separation", wheel_params_.separation);
@@ -50,7 +49,6 @@ controller_interface::CallbackReturn AckermannDriveController::on_init()
 
     auto_declare<double>("wheel_base", steer_params_.wheel_base);
     auto_declare<double>("pivot_distance", steer_params_.pivot_distance);
-    auto_declare<double>("max_steering_angle", steer_params_.max_steering_angle);
     auto_declare<double>("steering_arm_1", steer_params_.steering_arm_1);
     auto_declare<double>("steering_arm_2", steer_params_.steering_arm_2);
     auto_declare<double>("rack_distance", steer_params_.rack_distance);
@@ -107,8 +105,7 @@ controller_interface::CallbackReturn AckermannDriveController::on_init()
 InterfaceConfiguration AckermannDriveController::command_interface_configuration() const
 {
   std::vector<std::string> conf_names;
-  conf_names.push_back(left_wheel_name_ + "/" + HW_IF_VELOCITY);
-  conf_names.push_back(right_wheel_name_ + "/" + HW_IF_VELOCITY);
+  conf_names.push_back(traction_joint_name_ + "/" + HW_IF_EFFORT);
   conf_names.push_back(steering_joint_name_ + "/" + HW_IF_EFFORT);
   return {interface_configuration_type::INDIVIDUAL, conf_names};
 }
@@ -116,8 +113,9 @@ InterfaceConfiguration AckermannDriveController::command_interface_configuration
 InterfaceConfiguration AckermannDriveController::state_interface_configuration() const
 {
   std::vector<std::string> conf_names;
-  conf_names.push_back(left_wheel_name_ + "/" + feedback_type());
-  conf_names.push_back(right_wheel_name_ + "/" + feedback_type());
+  conf_names.push_back(traction_joint_name_ + "/" + HW_IF_VELOCITY);
+  conf_names.push_back(steering_joint_name_ + "/" + HW_IF_VELOCITY);
+  conf_names.push_back(traction_joint_name_ + "/" + HW_IF_POSITION);
   conf_names.push_back(steering_joint_name_ + "/" + HW_IF_POSITION);
 
   return {interface_configuration_type::INDIVIDUAL, conf_names};
@@ -162,9 +160,6 @@ controller_interface::return_type AckermannDriveController::update(
 
   previous_update_timestamp_ = time;
 
-  // Apply (possibly new) multipliers:
-  const auto wheels = wheel_params_;
-
   const auto steer = steer_params_;
 
   if (odom_params_.open_loop)
@@ -173,26 +168,24 @@ controller_interface::return_type AckermannDriveController::update(
   }
   else
   {
-    const double left_feedback =
-      registered_left_wheel_handle_->feedback.get().get_value();
-    const double right_feedback =
-      registered_right_wheel_handle_->feedback.get().get_value();
+    const double traction_feedback =
+      registered_traction_handle_->feedback.get().get_value();
 
-    if (std::isnan(left_feedback) || std::isnan(right_feedback))
+    if (std::isnan(traction_feedback))
     {
       RCLCPP_ERROR(
-        logger, "Either the left or right wheel %s is invalid", feedback_type());
+        logger, "Traction %s is invalid", feedback_type());
       return controller_interface::return_type::ERROR;
     }
 
     if (odom_params_.position_feedback)
     {
-      odometry_.update(left_feedback, right_feedback, time);
+      odometry_.update(traction_feedback, traction_feedback, time);
     }
     else
     {
       odometry_.updateFromVelocity(
-        left_feedback * period.seconds(), right_feedback * period.seconds(), time);
+        traction_feedback * period.seconds(), traction_feedback * period.seconds(), time);
     }
   }
 
@@ -265,38 +258,32 @@ controller_interface::return_type AckermannDriveController::update(
     angular_command = -angular_command_limit;
   }
 
-  // Compute wheels velocities:
-  double velocity_left =
-    (linear_command - angular_command * wheels.separation / 2.0) / wheels.radius;
-  double velocity_right =
-    (linear_command + angular_command * wheels.separation / 2.0) / wheels.radius;
-
   // Compute steering angles
-  // velocity_right *= right_steering_angle/alpha2;
-  const double current_rack_pos = \
-  registered_steering_handle_->feedback.get().get_value();
+  const double current_rack_pos =
+    registered_steering_handle_->feedback.get().get_value();
   static double desired_rack_pos = 0;
 
   if (linear_command != 0)
   {
+    const double desired_curvature = angular_command/linear_command;
     desired_rack_pos =
-      rack_offset_from_curvature_lut(angular_command/linear_command);
+      approximate_rack_offset_from_curvature(desired_curvature);
   }
   const double rack_pos_error = current_rack_pos - desired_rack_pos;
   const double rack_effort = -ctrl_.rack_kp*rack_pos_error;
 
-  // Set wheels velocities:
-  registered_left_wheel_handle_->control.get().set_value(velocity_left);
-  registered_right_wheel_handle_->control.get().set_value(velocity_right);
+  // Set traction velocity:
+  registered_traction_handle_->control.get().set_value(linear_command);
 
   // Set steering angles
   registered_steering_handle_->control.get().set_value(rack_effort);
-  // static int cnt = 0;
-  // if (cnt++ % 50 == 0)
-  // {
-  //   RCLCPP_INFO(logger, "Rack error: %f", rack_pos_error);
-  //   RCLCPP_INFO(logger, "Rack effort: %f", rack_effort);
-  // }
+  static int cnt = 0;
+  if (cnt++ % 50 == 0)
+  {
+    RCLCPP_INFO(logger, "Desired rack position: %f", desired_rack_pos);
+    // RCLCPP_INFO(logger, "Rack error: %f", rack_pos_error);
+    // RCLCPP_INFO(logger, "Rack effort: %f", rack_effort);
+  }
 
   return controller_interface::return_type::OK;
 }
@@ -307,8 +294,7 @@ controller_interface::CallbackReturn AckermannDriveController::on_configure(
   auto logger = get_node()->get_logger();
 
   // update parameters
-  left_wheel_name_ = get_node()->get_parameter("left_wheel_name").as_string();
-  right_wheel_name_ = get_node()->get_parameter("right_wheel_name").as_string();
+  traction_joint_name_ = get_node()->get_parameter("traction_joint_name").as_string();
   steering_joint_name_ = get_node()->get_parameter("steering_joint_name").as_string();
 
   wheel_params_.separation = get_node()->get_parameter("wheel_separation").as_double();
@@ -319,8 +305,6 @@ controller_interface::CallbackReturn AckermannDriveController::on_configure(
   steer_params_.wheel_base = get_node()->get_parameter("wheel_base").as_double();
   steer_params_.pivot_distance =
     get_node()->get_parameter("pivot_distance").as_double();
-  steer_params_.max_steering_angle =
-    get_node()->get_parameter("max_steering_angle").as_double();
   steer_params_.steering_arm_1 =
     get_node()->get_parameter("steering_arm_1").as_double();
   steer_params_.steering_arm_2 =
@@ -335,13 +319,15 @@ controller_interface::CallbackReturn AckermannDriveController::on_configure(
 
   steer_params_.ackermann_angle =
     atan(steer_params_.pivot_distance/steer_params_.wheel_base/2);
+  steer_params_.rack_initial_position = rack_position_from_steering_angle(0);
+  steer_params_.steering_angle_limit =
+    fabs(steering_angle_from_rack_offset(steer_params_.rack_limit));
   steer_params_.min_turning_radius =
-    steer_params_.wheel_base / tan(steer_params_.max_steering_angle);
-  steer_params_.rack_initial_position = rack_position_from_curvature(0);
-  steer_params_.curvature_limit =
-    curvature_from_rack_offset(steer_params_.rack_limit);
+    steer_params_.wheel_base / tan(steer_params_.steering_angle_limit);
 
-  generate_lookup_tables();
+  RCLCPP_INFO(get_node()->get_logger(),
+              "Steering angle limit: %f",
+              steer_params_.steering_angle_limit);
 
   ctrl_.rack_kp = get_node()->get_parameter("rack_kp").as_double();
   ctrl_.rack_ki = get_node()->get_parameter("rack_ki").as_double();
@@ -523,23 +509,19 @@ controller_interface::CallbackReturn AckermannDriveController::on_configure(
 controller_interface::CallbackReturn AckermannDriveController::on_activate(
   const rclcpp_lifecycle::State &)
 {
-  const auto left_result =
-    configure_joint(left_wheel_name_, feedback_type(), HW_IF_VELOCITY);
-  const auto right_result =
-    configure_joint(right_wheel_name_, feedback_type(), HW_IF_VELOCITY);
+  const auto traction_result =
+    configure_joint(traction_joint_name_, feedback_type(), HW_IF_EFFORT);
   const auto steer_result =
     configure_joint(steering_joint_name_, HW_IF_POSITION, HW_IF_EFFORT);
 
   if (
-    left_result == controller_interface::CallbackReturn::ERROR ||
-    right_result == controller_interface::CallbackReturn::ERROR ||
+    traction_result == controller_interface::CallbackReturn::ERROR ||
     steer_result == controller_interface::CallbackReturn::ERROR)
   {
     return controller_interface::CallbackReturn::ERROR;
   }
-  registered_left_wheel_handle_ = &registered_joint_handles_[0];
-  registered_right_wheel_handle_ = &registered_joint_handles_[1];
-  registered_steering_handle_ = &registered_joint_handles_[2];
+  registered_traction_handle_ = &registered_joint_handles_[0];
+  registered_steering_handle_ = &registered_joint_handles_[1];
 
   is_halted = false;
   subscriber_is_active_ = true;
@@ -651,71 +633,71 @@ controller_interface::CallbackReturn AckermannDriveController::configure_joint(
 void AckermannDriveController::generate_lookup_tables()
 {
   const double rack_offset_per_step =
-    2*steer_params_.rack_limit/steer_params_.lut_size;
+    steer_params_.rack_limit/(steer_params_.lut_size - 1);
   const double curvature_offset_per_step =
-    2*steer_params_.curvature_limit/steer_params_.lut_size;
+    steer_params_.steering_angle_limit/(steer_params_.lut_size - 1);
 
-  // RCLCPP_INFO(get_node()->get_logger(), "Rack limit: %f", steer_params_.rack_limit);
-  // RCLCPP_INFO(get_node()->get_logger(), "Curvature limit: %f", steer_params_.curvature_limit);
-  // RCLCPP_INFO(get_node()->get_logger(), "LUT size: %d", steer_params_.lut_size);
-  double rack_offset = -steer_params_.rack_limit;
-  double curvature = -steer_params_.curvature_limit;
-  for (int i = -steer_params_.lut_size/2; i < steer_params_.lut_size/2; i++)
+  double rack_offset = 0;
+  double curvature = 0;
+  for (int i = 0; i < steer_params_.lut_size; i++)
   {
-    rack_offset_lut_.push_back(rack_offset);
-    curvature_lut_.push_back(curvature);
-    // RCLCPP_INFO(get_node()->get_logger(), "Rack offset: %f", rack_offset);
-    // RCLCPP_INFO(get_node()->get_logger(), "Curvature: %f", curvature);
+    rack_offset_lut_.push_back(
+      approximate_rack_offset_from_curvature(curvature));
+    curvature_lut_.push_back(
+      approximate_curvature_from_rack_offset(rack_offset));
+    RCLCPP_INFO(get_node()->get_logger(), "Rack offset: %f", rack_offset);
+    RCLCPP_INFO(get_node()->get_logger(), "Curvature: %f", curvature);
     rack_offset += rack_offset_per_step;
     curvature += curvature_offset_per_step;
   }
 }
-double AckermannDriveController::rack_position_from_curvature(double curvature)
+
+double AckermannDriveController::rack_position_from_steering_angle(
+  const double steering_angle)
 {
-  double alpha, phi, v1, v2, h1, h2;
+  const double phi = steering_angle + steer_params_.ackermann_angle;
+  const double v1 = steer_params_.steering_arm_1 * cos(phi);
+  const double h1 = steer_params_.steering_arm_1 * sin(phi);
 
-  alpha = -atan(curvature*steer_params_.wheel_base);
-  phi = alpha + steer_params_.ackermann_angle;
-  v1 = steer_params_.steering_arm_1 * cos(phi);
-  h1 = steer_params_.steering_arm_1 * sin(phi);
-
-  v2 = steer_params_.rack_distance - v1;
-  h2 = sqrt(steer_params_.steering_arm_2*steer_params_.steering_arm_2 - v2*v2);
+  const double v2 = steer_params_.rack_distance - v1;
+  const double h2 =
+    sqrt(steer_params_.steering_arm_2*steer_params_.steering_arm_2 - v2*v2);
 
   return h1 + h2;
 }
 
-double AckermannDriveController::curvature_from_rack_offset(double rack_pos)
+double AckermannDriveController::steering_angle_from_rack_offset(
+  double rack_offset)
 {
   const double l1 = steer_params_.steering_arm_1;
   const double l2 = steer_params_.steering_arm_2;
-  const double rack_offset = rack_pos + steer_params_.rack_initial_position;
+  const double rack_position =
+    rack_offset + steer_params_.rack_initial_position;
 
-  const double l3 = hypot(rack_offset, steer_params_.rack_distance);
-  const double alpha = atan2(steer_params_.rack_distance, rack_offset) +
+  const double l3 = hypot(rack_position, steer_params_.rack_distance);
+  const double steering_angle =
+    atan2(steer_params_.rack_distance, rack_position) +
     acos((l1*l1 + l3*l3 - l2*l2)/(2*l1*l3)) +
     steer_params_.ackermann_angle - M_PI/2;
-  return -atan(alpha)/steer_params_.wheel_base;
+  return steering_angle;
 }
 
-double AckermannDriveController::rack_offset_from_curvature_lut(
-  double curvature)
+double AckermannDriveController::approximate_rack_offset_from_curvature(
+  const double curvature)
 {
-  const double index =
-    steer_params_.lut_size*(curvature + steer_params_.curvature_limit)/steer_params_.curvature_limit/2;
-  const int floored_index = floor(index);
-  const double ratio = index - floored_index;
-  return (1.0 - ratio) * rack_offset_lut_[index] + ratio * rack_offset_lut_[index + 1];
+  const double steering_angle = atan(steer_params_.wheel_base*curvature);
+  const double rack_offset =
+    steering_angle*steer_params_.rack_limit/steer_params_.steering_angle_limit;
+  return rack_offset;
 }
 
-double AckermannDriveController::curvature_from_rack_offset_lut(
-  double rack_offset)
+double AckermannDriveController::approximate_curvature_from_rack_offset(
+  const double rack_offset)
 {
-  const double index =
-    steer_params_.lut_size*(rack_offset + steer_params_.rack_limit)/steer_params_.rack_limit/2;
-  const int floored_index = floor(index);
-  const double ratio = index - floored_index;
-  return (1.0 - ratio) * curvature_lut_[index] + ratio * curvature_lut_[index + 1];
+  const double steering_angle =
+    rack_offset*steer_params_.steering_angle_limit/steer_params_.rack_limit;
+  const double curvature = tan(steering_angle)/steer_params_.wheel_base;
+  return curvature;
 }
 }  // namespace ackermann_drive_controller
 
@@ -723,55 +705,3 @@ double AckermannDriveController::curvature_from_rack_offset_lut(
 
 CLASS_LOADER_REGISTER_CLASS(
   ackermann_drive_controller::AckermannDriveController, controller_interface::ControllerInterface)
-
-/*
-try:
-    l1, l2, d, gamma, b, L, *_ = map(float, sys.argv[3:])
-except ValueError as e:
-    if "not enough values to unpack" not in str(e):
-        raise e
-    l1 = 0.080
-    l2 = 0.215
-    d = 0.12365818824032602
-    gamma = 0.32540155164520534
-    b, L = 0.803, 1.190
-
-def rack_pos_from_alpha(alpha, s):
-    phi = alpha - s * gamma
-
-    v1 = l1 * np.cos(phi)
-    h1 = -l1 * np.sin (phi)
-
-    v2 = d - v1
-    h2 = s*np.sqrt(l2*l2 - v2*v2)
-
-    return h1 + h2
-
-x0 = rack_pos_from_alpha(0, 1)
-
-def alphas_from_rack_pos(x, s=np.array([[1], [-1]])):
-    x = s*x + x0
-
-    l3 = np.hypot(x, d)
-    a = np.arctan2(d, x)
-
-    a += np.arccos((l1*l1 + l3*l3 - l2*l2)/(2*l1*l3))
-
-    a += gamma - np.pi/2
-
-    return a * [[1], [-1]]
-
-def curve_radii(alpha1, alpha2):
-    return -np.array([[L]]) / np.tan([alpha1, alpha2]) + [[-b/2], [b/2]]
-
-def curvatures(alpha1, alpha2):
-    return 1/curve_radii(alpha1, alpha2)
-
-
-lim = 0.0325
-cnt = 100
-x = np.linspace(-lim, lim, cnt)
-alpha1, alpha2 = alphas_from_rack_pos(x)
-kappa1, kappa2 = curvatures(alpha1, alpha2)
-
-*/

@@ -84,18 +84,16 @@ protected:
     const char * command_interface_name);
 
   void generate_lookup_tables();
-  double rack_position_from_curvature(double curvature);
-  double curvature_from_rack_offset(double rack_pos);
-  double rack_offset_from_curvature_lut(double curvature);
-  double curvature_from_rack_offset_lut(double rack_offset);
+  double rack_position_from_steering_angle(const double steering_angle);
+  double steering_angle_from_rack_offset(double rack_offset);
+  double approximate_rack_offset_from_curvature(const double curvature);
+  double approximate_curvature_from_rack_offset(const double rack_offset);
 
-  std::string left_wheel_name_;
-  std::string right_wheel_name_;
+  std::string traction_joint_name_;
   std::string steering_joint_name_;
 
   std::vector<JointHandle> registered_joint_handles_;
-  JointHandle * registered_left_wheel_handle_;
-  JointHandle * registered_right_wheel_handle_;
+  JointHandle * registered_traction_handle_;
   JointHandle * registered_steering_handle_;
 
   struct WheelParams
@@ -108,7 +106,6 @@ protected:
   {
     double wheel_base = 0.0;
     double pivot_distance = 0.0;
-    double max_steering_angle = 1.5707963267948966;
     double steering_arm_1 = 0.0;
     double steering_arm_2 = 0.0;
     double rack_distance = 0.0;
@@ -118,7 +115,7 @@ protected:
     double min_turning_radius = 0.0;
     double ackermann_angle = 0.0;
     double rack_initial_position = 0.0;
-    double curvature_limit = 0.0;
+    double steering_angle_limit = 0.0;
   } steer_params_;
 
   std::vector<double> rack_offset_lut_;
@@ -126,7 +123,7 @@ protected:
 
   struct ControlParams
   {
-    double rack_kp = 50.0;
+    double rack_kp = 1000.0;
     double rack_ki = 0.0;
     double rack_kd = 0.0;
   } ctrl_;
