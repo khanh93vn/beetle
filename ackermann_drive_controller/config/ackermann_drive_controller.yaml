@@ -1,27 +1,10 @@
-controller_manager:
-  ros__parameters:
-    update_rate: 100  # Hz
-    use_sim_time: true
-
-    joint_state_broadcaster:
-      type: joint_state_broadcaster/JointStateBroadcaster
-
-    ackermann_drive_base_controller:
-      type: ackermann_drive_controller/AckermannDriveController
-
-ackermann_drive_base_controller:
+ackermann_drive_controller:
   ros__parameters:
     # Model
-    traction_joint_name: ring_gear_joint # Name of traction joint in URDF
-    steering_joint_name: steering_slider_joint # Name of steering joint in URDF
-
-    traction_pid_params: [-1.5, -1.0, 0.0, 0.0, 0.0, -0.0]
-    steering_pid_params: [-30.0, -10.0, -5.0, 0.0, 0.0, -0.0]
-
-    steering_transmision_ratio: -17.062134424554568
-
-    wheel_radius: 0.250 # Radius of traction wheels
-    wheelbase: 1.190 # Distance between center of back wheels and front wheel
+    traction_joint_name: traction_joint # Name of traction joint in URDF
+    steering_joint_name: steering_joint # Name of steering joint in URDF
+    wheel_radius: 0.0 # Radius of front wheel
+    wheelbase: 0.0 # Distance between center of back wheels and front wheel
 
     # Odometry
     odom_frame_id: odom
@@ -39,14 +22,14 @@ ackermann_drive_base_controller:
       # min_velocity: 0.0
       # max_velocity: 1000.0
       # min_acceleration: 0.0
-      max_acceleration: 0.4
+      max_acceleration: 5.0
       # min_deceleration: 0.0
-      max_deceleration: 0.4
+      max_deceleration: 8.0
       # min_jerk: 0.0
       # max_jerk: 1000.0
     steering:
-      min_position: -0.85
-      max_position: 0.85
+      min_position: -1.57
+      max_position: 1.57
       # min_velocity: 0.0
       max_velocity: 1.0
       # min_acceleration: 0.0

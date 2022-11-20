@@ -1,3 +1,21 @@
+// Copyright 2022 Pixel Robotics.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+/*
+ * Author: Tony Najjar
+ */
+
 #include <gmock/gmock.h>
 
 #include <array>
@@ -7,12 +25,12 @@
 #include <utility>
 #include <vector>
 
-#include "ackermann_drive_controller/ackermann_drive_controller.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "ackermann_drive_controller/ackermann_drive_controller.hpp"
 
 using CallbackReturn = controller_interface::CallbackReturn;
 using hardware_interface::HW_IF_POSITION;
@@ -64,7 +82,6 @@ protected:
   void SetUp() override
   {
     controller_ = std::make_unique<TestableAckermannDriveController>();
-
     pub_node = std::make_shared<rclcpp::Node>("velocity_publisher");
     velocity_publisher = pub_node->create_publisher<geometry_msgs::msg::TwistStamped>(
       controller_name + "/cmd_vel", rclcpp::SystemDefaultsQoS());
@@ -115,28 +132,15 @@ protected:
     }
   }
 
-  void assignResourcesPosFeedback()
+  void assignResources()
   {
     std::vector<LoanedStateInterface> state_ifs;
-    state_ifs.emplace_back(left_wheel_pos_state_);
-    state_ifs.emplace_back(right_wheel_pos_state_);
+    state_ifs.emplace_back(steering_joint_pos_state_);
+    state_ifs.emplace_back(traction_joint_vel_state_);
 
     std::vector<LoanedCommandInterface> command_ifs;
-    command_ifs.emplace_back(left_wheel_vel_cmd_);
-    command_ifs.emplace_back(right_wheel_vel_cmd_);
-
-    controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
-  }
-
-  void assignResourcesVelFeedback()
-  {
-    std::vector<LoanedStateInterface> state_ifs;
-    state_ifs.emplace_back(left_wheel_vel_state_);
-    state_ifs.emplace_back(right_wheel_vel_state_);
-
-    std::vector<LoanedCommandInterface> command_ifs;
-    command_ifs.emplace_back(left_wheel_vel_cmd_);
-    command_ifs.emplace_back(right_wheel_vel_cmd_);
+    command_ifs.emplace_back(steering_joint_pos_cmd_);
+    command_ifs.emplace_back(traction_joint_vel_cmd_);
 
     controller_->assign_interfaces(std::move(command_ifs), std::move(state_ifs));
   }
@@ -144,23 +148,22 @@ protected:
   const std::string controller_name = "test_ackermann_drive_controller";
   std::unique_ptr<TestableAckermannDriveController> controller_;
 
-  const std::vector<std::string> left_wheel_names = {"left_wheel_joint"};
-  const std::vector<std::string> right_wheel_names = {"right_wheel_joint"};
-  std::vector<double> position_values_ = {0.1, 0.2};
-  std::vector<double> velocity_values_ = {0.01, 0.02};
+  const std::string traction_joint_name = "traction_joint";
+  const std::string steering_joint_name = "steering_joint";
+  double position_ = 0.1;
+  double velocity_ = 0.2;
 
-  hardware_interface::StateInterface left_wheel_pos_state_{
-    left_wheel_names[0], HW_IF_POSITION, &position_values_[0]};
-  hardware_interface::StateInterface right_wheel_pos_state_{
-    right_wheel_names[0], HW_IF_POSITION, &position_values_[1]};
-  hardware_interface::StateInterface left_wheel_vel_state_{
-    left_wheel_names[0], HW_IF_VELOCITY, &velocity_values_[0]};
-  hardware_interface::StateInterface right_wheel_vel_state_{
-    right_wheel_names[0], HW_IF_VELOCITY, &velocity_values_[1]};
-  hardware_interface::CommandInterface left_wheel_vel_cmd_{
-    left_wheel_names[0], HW_IF_VELOCITY, &velocity_values_[0]};
-  hardware_interface::CommandInterface right_wheel_vel_cmd_{
-    right_wheel_names[0], HW_IF_VELOCITY, &velocity_values_[1]};
+  hardware_interface::StateInterface steering_joint_pos_state_{
+    steering_joint_name, HW_IF_POSITION, &position_};
+
+  hardware_interface::StateInterface traction_joint_vel_state_{
+    traction_joint_name, HW_IF_VELOCITY, &velocity_};
+
+  hardware_interface::CommandInterface steering_joint_pos_cmd_{
+    steering_joint_name, HW_IF_POSITION, &position_};
+
+  hardware_interface::CommandInterface traction_joint_vel_cmd_{
+    traction_joint_name, HW_IF_VELOCITY, &velocity_};
 
   rclcpp::Node::SharedPtr pub_node;
   rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr velocity_publisher;
@@ -170,64 +173,40 @@ TEST_F(TestAckermannDriveController, configure_fails_without_parameters)
 {
   const auto ret = controller_->init(controller_name);
   ASSERT_EQ(ret, controller_interface::return_type::OK);
-
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 }
 
-TEST_F(TestAckermannDriveController, configure_fails_with_only_left_or_only_right_side_defined)
+TEST_F(TestAckermannDriveController, configure_fails_if_only_traction_or_steering_side_defined)
 {
   const auto ret = controller_->init(controller_name);
   ASSERT_EQ(ret, controller_interface::return_type::OK);
 
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(left_wheel_names)));
+    rclcpp::Parameter("traction_joint_name", rclcpp::ParameterValue(traction_joint_name)));
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(std::vector<std::string>())));
+    rclcpp::Parameter("steering_joint_name", rclcpp::ParameterValue(std::string())));
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(std::vector<std::string>())));
+    rclcpp::Parameter("traction_joint_name", rclcpp::ParameterValue(std::string())));
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(right_wheel_names)));
+    rclcpp::Parameter("steering_joint_name", rclcpp::ParameterValue(steering_joint_name)));
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 }
 
-TEST_F(TestAckermannDriveController, configure_fails_with_mismatching_wheel_side_size)
+TEST_F(TestAckermannDriveController, configure_succeeds_when_joints_are_specified)
 {
   const auto ret = controller_->init(controller_name);
   ASSERT_EQ(ret, controller_interface::return_type::OK);
 
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(left_wheel_names)));
-
-  auto extended_right_wheel_names = right_wheel_names;
-  extended_right_wheel_names.push_back("extra_wheel");
+    rclcpp::Parameter("traction_joint_name", rclcpp::ParameterValue(traction_joint_name)));
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(extended_right_wheel_names)));
-
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
-}
-
-TEST_F(TestAckermannDriveController, configure_succeeds_when_wheels_are_specified)
-{
-  const auto ret = controller_->init(controller_name);
-  ASSERT_EQ(ret, controller_interface::return_type::OK);
-
-  controller_->get_node()->set_parameter(
-    rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(left_wheel_names)));
-  controller_->get_node()->set_parameter(
-    rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(right_wheel_names)));
+    rclcpp::Parameter("steering_joint_name", rclcpp::ParameterValue(steering_joint_name)));
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-
-  ASSERT_THAT(
-    controller_->state_interface_configuration().names,
-    SizeIs(left_wheel_names.size() + right_wheel_names.size()));
-  ASSERT_THAT(
-    controller_->command_interface_configuration().names,
-    SizeIs(left_wheel_names.size() + right_wheel_names.size()));
 }
 
 TEST_F(TestAckermannDriveController, activate_fails_without_resources_assigned)
@@ -236,79 +215,28 @@ TEST_F(TestAckermannDriveController, activate_fails_without_resources_assigned)
   ASSERT_EQ(ret, controller_interface::return_type::OK);
 
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(left_wheel_names)));
+    rclcpp::Parameter("traction_joint_name", rclcpp::ParameterValue(traction_joint_name)));
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(right_wheel_names)));
+    rclcpp::Parameter("steering_joint_name", rclcpp::ParameterValue(steering_joint_name)));
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 }
 
-TEST_F(TestAckermannDriveController, activate_succeeds_with_pos_resources_assigned)
+TEST_F(TestAckermannDriveController, activate_succeeds_with_resources_assigned)
 {
   const auto ret = controller_->init(controller_name);
   ASSERT_EQ(ret, controller_interface::return_type::OK);
 
   // We implicitly test that by default position feedback is required
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(left_wheel_names)));
+    rclcpp::Parameter("traction_joint_name", rclcpp::ParameterValue(traction_joint_name)));
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(right_wheel_names)));
+    rclcpp::Parameter("steering_joint_name", rclcpp::ParameterValue(steering_joint_name)));
 
   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-  assignResourcesPosFeedback();
+  assignResources();
   ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-}
-
-TEST_F(TestAckermannDriveController, activate_succeeds_with_vel_resources_assigned)
-{
-  const auto ret = controller_->init(controller_name);
-  ASSERT_EQ(ret, controller_interface::return_type::OK);
-
-  controller_->get_node()->set_parameter(
-    rclcpp::Parameter("position_feedback", rclcpp::ParameterValue(false)));
-  controller_->get_node()->set_parameter(
-    rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(left_wheel_names)));
-  controller_->get_node()->set_parameter(
-    rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(right_wheel_names)));
-
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-  assignResourcesVelFeedback();
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-}
-
-TEST_F(TestAckermannDriveController, activate_fails_with_wrong_resources_assigned_1)
-{
-  const auto ret = controller_->init(controller_name);
-  ASSERT_EQ(ret, controller_interface::return_type::OK);
-
-  controller_->get_node()->set_parameter(
-    rclcpp::Parameter("position_feedback", rclcpp::ParameterValue(false)));
-  controller_->get_node()->set_parameter(
-    rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(left_wheel_names)));
-  controller_->get_node()->set_parameter(
-    rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(right_wheel_names)));
-
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-  assignResourcesPosFeedback();
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
-}
-
-TEST_F(TestAckermannDriveController, activate_fails_with_wrong_resources_assigned_2)
-{
-  const auto ret = controller_->init(controller_name);
-  ASSERT_EQ(ret, controller_interface::return_type::OK);
-
-  controller_->get_node()->set_parameter(
-    rclcpp::Parameter("position_feedback", rclcpp::ParameterValue(true)));
-  controller_->get_node()->set_parameter(
-    rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(left_wheel_names)));
-  controller_->get_node()->set_parameter(
-    rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(right_wheel_names)));
-
-  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::SUCCESS);
-  assignResourcesVelFeedback();
-  ASSERT_EQ(controller_->on_activate(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
 }
 
 TEST_F(TestAckermannDriveController, cleanup)
@@ -317,17 +245,17 @@ TEST_F(TestAckermannDriveController, cleanup)
   ASSERT_EQ(ret, controller_interface::return_type::OK);
 
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(left_wheel_names)));
+    rclcpp::Parameter("traction_joint_name", rclcpp::ParameterValue(traction_joint_name)));
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(right_wheel_names)));
-  controller_->get_node()->set_parameter(rclcpp::Parameter("wheel_separation", 0.4));
-  controller_->get_node()->set_parameter(rclcpp::Parameter("wheel_radius", 0.1));
+    rclcpp::Parameter("steering_joint_name", rclcpp::ParameterValue(steering_joint_name)));
+  controller_->get_node()->set_parameter(rclcpp::Parameter("wheelbase", 1.2));
+  controller_->get_node()->set_parameter(rclcpp::Parameter("wheel_radius", 0.12));
 
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
   auto state = controller_->get_node()->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-  assignResourcesPosFeedback();
+  assignResources();
 
   state = controller_->get_node()->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
@@ -354,8 +282,8 @@ TEST_F(TestAckermannDriveController, cleanup)
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
 
   // should be stopped
-  EXPECT_EQ(0.0, left_wheel_vel_cmd_.get_value());
-  EXPECT_EQ(0.0, right_wheel_vel_cmd_.get_value());
+  EXPECT_EQ(0.0, steering_joint_pos_cmd_.get_value());
+  EXPECT_EQ(0.0, traction_joint_vel_cmd_.get_value());
 
   executor.cancel();
 }
@@ -366,21 +294,21 @@ TEST_F(TestAckermannDriveController, correct_initialization_using_parameters)
   ASSERT_EQ(ret, controller_interface::return_type::OK);
 
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter("left_wheel_names", rclcpp::ParameterValue(left_wheel_names)));
+    rclcpp::Parameter("traction_joint_name", rclcpp::ParameterValue(traction_joint_name)));
   controller_->get_node()->set_parameter(
-    rclcpp::Parameter("right_wheel_names", rclcpp::ParameterValue(right_wheel_names)));
-  controller_->get_node()->set_parameter(rclcpp::Parameter("wheel_separation", 0.4));
+    rclcpp::Parameter("steering_joint_name", rclcpp::ParameterValue(steering_joint_name)));
+  controller_->get_node()->set_parameter(rclcpp::Parameter("wheelbase", 0.4));
   controller_->get_node()->set_parameter(rclcpp::Parameter("wheel_radius", 1.0));
 
   rclcpp::executors::SingleThreadedExecutor executor;
   executor.add_node(controller_->get_node()->get_node_base_interface());
 
   auto state = controller_->get_node()->configure();
-  assignResourcesPosFeedback();
+  assignResources();
 
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());
-  EXPECT_EQ(0.01, left_wheel_vel_cmd_.get_value());
-  EXPECT_EQ(0.02, right_wheel_vel_cmd_.get_value());
+  EXPECT_EQ(position_, steering_joint_pos_cmd_.get_value());
+  EXPECT_EQ(velocity_, traction_joint_vel_cmd_.get_value());
 
   state = controller_->get_node()->activate();
   ASSERT_EQ(State::PRIMARY_STATE_ACTIVE, state.id());
@@ -395,8 +323,8 @@ TEST_F(TestAckermannDriveController, correct_initialization_using_parameters)
   ASSERT_EQ(
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
-  EXPECT_EQ(1.0, left_wheel_vel_cmd_.get_value());
-  EXPECT_EQ(1.0, right_wheel_vel_cmd_.get_value());
+  EXPECT_EQ(0.0, steering_joint_pos_cmd_.get_value());
+  EXPECT_EQ(1.0, traction_joint_vel_cmd_.get_value());
 
   // deactivated
   // wait so controller process the second point when deactivated
@@ -407,14 +335,14 @@ TEST_F(TestAckermannDriveController, correct_initialization_using_parameters)
     controller_->update(rclcpp::Time(0, 0, RCL_ROS_TIME), rclcpp::Duration::from_seconds(0.01)),
     controller_interface::return_type::OK);
 
-  EXPECT_EQ(0.0, left_wheel_vel_cmd_.get_value()) << "Wheels are halted on deactivate()";
-  EXPECT_EQ(0.0, right_wheel_vel_cmd_.get_value()) << "Wheels are halted on deactivate()";
+  EXPECT_EQ(0.0, steering_joint_pos_cmd_.get_value()) << "Wheels are halted on deactivate()";
+  EXPECT_EQ(0.0, traction_joint_vel_cmd_.get_value()) << "Wheels are halted on deactivate()";
 
   // cleanup
   state = controller_->get_node()->cleanup();
   ASSERT_EQ(State::PRIMARY_STATE_UNCONFIGURED, state.id());
-  EXPECT_EQ(0.0, left_wheel_vel_cmd_.get_value());
-  EXPECT_EQ(0.0, right_wheel_vel_cmd_.get_value());
+  EXPECT_EQ(0.0, steering_joint_pos_cmd_.get_value());
+  EXPECT_EQ(0.0, traction_joint_vel_cmd_.get_value());
 
   state = controller_->get_node()->configure();
   ASSERT_EQ(State::PRIMARY_STATE_INACTIVE, state.id());

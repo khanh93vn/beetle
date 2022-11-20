@@ -118,11 +118,10 @@ def generate_launch_description():
         output='screen')
 
     # Declare event handlers
-
     load_ackermann_drive_base_ctrl_event = RegisterEventHandler(
-    event_handler=OnProcessExit(
-        target_action=start_gazebo_spawner,
-        on_exit=[load_ackermann_drive_base_controller]))
+        event_handler=OnProcessExit(
+            target_action=start_gazebo_spawner,
+            on_exit=[load_ackermann_drive_base_controller]))
     load_joint_state_ctrl_event = RegisterEventHandler(
         event_handler=OnProcessExit(
             target_action=load_joint_state_controller,

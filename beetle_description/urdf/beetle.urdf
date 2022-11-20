@@ -9,12 +9,12 @@
   <xacro:property name="chassis_mass" value="40.0"/>
   <xacro:property name="wheel_mass" value="3.0"/>
   <xacro:property name="wheel_rim_mass" value="5.0"/>
-  <xacro:property name="ring_gear_mass" value="0.5"/>
-  <xacro:property name="spider_gear_mass" value="0.25"/>
+  <xacro:property name="ring_gear_mass" value="2.0"/>
+  <xacro:property name="spider_gear_mass" value="1.0"/>
   <xacro:property name="steering_link_mass" value="1.0"/>
   <xacro:property name="coupler_link_mass" value="2.0"/>
   <xacro:property name="steering_arm_mass" value="1.0"/>
-  <xacro:property name="rack_mass" value="1.0"/>
+  <xacro:property name="steering_slider_mass" value="1.0"/>
   <xacro:property name="steering_joint_friction" value="0.0075"/>
   <xacro:property name="joint_friction" value="0.0075"/>
   <xacro:property name="joint_damping" value="0.005"/>
@@ -69,8 +69,11 @@
   <xacro:property name="steering_link_radius" value="0.020"/>
   <xacro:property name="steering_link_length" value="0.082"/>
 
-  <xacro:property name="steering_rack_length" value="0.300"/>
-  <xacro:property name="steering_rack_yoff" value="0.135"/>
+  <xacro:property name="steering_slider_length" value="0.300"/>
+  <xacro:property name="steering_slider_yoff" value="0.135"/>
+
+  <xacro:property name="steering_slider_limit" value="0.050"/>
+  <xacro:property name="steering_angle_limit" value="0.8531067212277285"/>
 
   <xacro:property name="control_box_width" value="0.300"/>
   <xacro:property name="control_box_height" value="0.100"/>
@@ -335,9 +338,9 @@
       <dynamics damping="${joint_damping}" friction="${joint_friction}"/>
     </joint>
     <xacro:box_link prefix="${prefix}_coupler"
-                    xoff="${coupler_link_length/4}"
+                    xoff="${coupler_link_length/4-steering_link_radius/2}"
                     mass="${coupler_link_mass/2}"
-                    length="${coupler_link_length/2+2*steering_link_radius}"
+                    length="${coupler_link_length/2+steering_link_radius}"
                     width="${steering_arm_width}"
                     height="${steering_arm_thickness}" collision="0">
       <material name="Cyan">
@@ -363,27 +366,27 @@
     </joint>
   </gazebo>
 
-  <xacro:box_link prefix="steering_rack" mass="${rack_mass}"
-                  length="${steering_arm_length}" width="${steering_arm_width}"
-                  height="${steering_arm_thickness}" collision="0">
+  <xacro:cylinder_link prefix="steering_slider" mass="${steering_slider_mass}"
+    radius="${steering_arm_width/2}" length="${steering_slider_length}"
+    collision="0">
     <material name="Cyan">
       <color rgba="0 1.0 1.0 1.0"/>
     </material>
-  </xacro:box_link>
-  <joint name="steering_rack_joint" type="prismatic">
+  </xacro:cylinder_link>
+  <joint name="steering_slider_joint" type="prismatic">
     <parent link="right_steering_coupler_link"/>
-    <child link="steering_rack_link"/>
-    <origin xyz="${steering_rack_yoff} 0 ${steering_arm_thickness}"
-            rpy="0 0 0"/>
-    <axis xyz="1 0 0"/>
-    <limit effort="30000" velocity="1.0" lower="-0.050" upper="0.050" />
-    <!-- <dynamics damping="${joint_damping}" friction="${joint_friction}"/> -->
+    <child link="steering_slider_link"/>
+    <origin xyz="${steering_slider_yoff} 0 ${steering_arm_width}"
+            rpy="0 ${-pi/2} 0"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="30000" velocity="1.0" lower="${-steering_slider_limit}"
+      upper="${steering_slider_limit}" />
   </joint>
   <gazebo>
-    <joint name="rack_base_joint" type="fixed">
+    <joint name="steering_slider_base_joint" type="fixed">
       <pose>0 0 0 0 0 0</pose>
       <parent>base_link</parent>
-      <child>steering_rack_link</child>
+      <child>steering_slider_link</child>
     </joint>
   </gazebo>
 
@@ -486,6 +489,7 @@
     <child link="ring_gear_link"/>
     <origin xyz="0 ${ring_gear_yoff} ${rear_axle_zoff}" rpy="${-pi/2} 0 0"/>
     <axis xyz="0 0 1"/>
+    <limit effort="1000" velocity="${2*pi}"/>
     <dynamics damping="${joint_damping}" friction="${joint_friction}"/>
   </joint>
 
@@ -571,11 +575,13 @@
       <command_interface name="effort"/>
       <state_interface name="position"/>
       <state_interface name="velocity"/>
+      <state_interface name="effort"/>
     </joint>
-    <joint name="steering_rack_joint">
+    <joint name="steering_slider_joint">
       <command_interface name="effort"/>
       <state_interface name="position"/>
       <state_interface name="velocity"/>
+      <state_interface name="effort"/>
     </joint>
   </ros2_control>
 

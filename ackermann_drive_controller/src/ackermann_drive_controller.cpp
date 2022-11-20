@@ -1,22 +1,40 @@
+// Copyright 2022 Pixel Robotics.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+/*
+ * Author: Tony Najjar
+ */
+
 #include <memory>
 #include <queue>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "ackermann_drive_controller/ackermann_drive_controller.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/logging.hpp"
 #include "tf2/LinearMath/Quaternion.h"
+#include "ackermann_drive_controller/ackermann_drive_controller.hpp"
 
 namespace
 {
-constexpr auto DEFAULT_COMMAND_TOPIC = "/cmd_vel_stamped";
-constexpr auto DEFAULT_COMMAND_UNSTAMPED_TOPIC = "/cmd_vel";
-constexpr auto DEFAULT_COMMAND_OUT_TOPIC = "/cmd_vel_out";
-constexpr auto DEFAULT_ODOMETRY_TOPIC = "/odom";
+constexpr auto DEFAULT_COMMAND_TOPIC = "~/cmd_vel";
+constexpr auto DEFAULT_ACKERMANN_OUT_TOPIC = "~/cmd_ackermann";
+constexpr auto DEFAULT_ODOMETRY_TOPIC = "~/odom";
 constexpr auto DEFAULT_TRANSFORM_TOPIC = "/tf";
+constexpr auto DEFAULT_RESET_ODOM_SERVICE = "~/reset_odometry";
 }  // namespace
 
 namespace ackermann_drive_controller
@@ -31,100 +49,81 @@ using lifecycle_msgs::msg::State;
 
 AckermannDriveController::AckermannDriveController() : controller_interface::ControllerInterface() {}
 
-const char * AckermannDriveController::feedback_type() const
-{
-  return odom_params_.position_feedback ? HW_IF_POSITION : HW_IF_VELOCITY;
-}
-
-controller_interface::CallbackReturn AckermannDriveController::on_init()
+CallbackReturn AckermannDriveController::on_init()
 {
   try
   {
     // with the lifecycle node being initialized, we can declare parameters
     auto_declare<std::string>("traction_joint_name", std::string());
-    auto_declare<std::string>("steering_joint_name_", std::string());
+    auto_declare<std::string>("steering_joint_name", std::string());
+    auto_declare<std::vector<double>>("traction_pid_params", std::vector<double>());
+    auto_declare<std::vector<double>>("steering_pid_params", std::vector<double>());
 
-    auto_declare<double>("wheel_separation", wheel_params_.separation);
+    auto_declare<double>("steering_transmision_ratio", steering_transmision_ratio_);
+
+    auto_declare<double>("wheelbase", wheel_params_.wheelbase);
     auto_declare<double>("wheel_radius", wheel_params_.radius);
-
-    auto_declare<double>("wheel_base", steer_params_.wheel_base);
-    auto_declare<double>("pivot_distance", steer_params_.pivot_distance);
-    auto_declare<double>("steering_arm_1", steer_params_.steering_arm_1);
-    auto_declare<double>("steering_arm_2", steer_params_.steering_arm_2);
-    auto_declare<double>("rack_distance", steer_params_.rack_distance);
-    auto_declare<double>("rack_limit", steer_params_.rack_limit);
-    auto_declare<int>("lut_size", steer_params_.lut_size);
-    auto_declare<double>("rack_kp", ctrl_.rack_kp);
-    auto_declare<double>("rack_ki", ctrl_.rack_ki);
-    auto_declare<double>("rack_kd", ctrl_.rack_kd);
 
     auto_declare<std::string>("odom_frame_id", odom_params_.odom_frame_id);
     auto_declare<std::string>("base_frame_id", odom_params_.base_frame_id);
     auto_declare<std::vector<double>>("pose_covariance_diagonal", std::vector<double>());
     auto_declare<std::vector<double>>("twist_covariance_diagonal", std::vector<double>());
     auto_declare<bool>("open_loop", odom_params_.open_loop);
-    auto_declare<bool>("position_feedback", odom_params_.position_feedback);
     auto_declare<bool>("enable_odom_tf", odom_params_.enable_odom_tf);
+    auto_declare<bool>("odom_only_twist", odom_params_.odom_only_twist);
 
-    auto_declare<double>("cmd_vel_timeout", cmd_vel_timeout_.count() / 1000.0);
-    publish_limited_velocity_ =
-      auto_declare<bool>("publish_limited_velocity", publish_limited_velocity_);
+    auto_declare<int>("cmd_vel_timeout", cmd_vel_timeout_.count());
+    auto_declare<bool>("publish_ackermann_command", publish_ackermann_command_);
     auto_declare<int>("velocity_rolling_window_size", 10);
-    use_stamped_vel_ = auto_declare<bool>("use_stamped_vel", use_stamped_vel_);
+    auto_declare<bool>("use_stamped_vel", use_stamped_vel_);
+    auto_declare<double>("publish_rate", publish_rate_);
 
-    auto_declare<bool>("linear.x.has_velocity_limits", false);
-    auto_declare<bool>("linear.x.has_acceleration_limits", false);
-    auto_declare<bool>("linear.x.has_jerk_limits", false);
-    auto_declare<double>("linear.x.max_velocity", NAN);
-    auto_declare<double>("linear.x.min_velocity", NAN);
-    auto_declare<double>("linear.x.max_acceleration", NAN);
-    auto_declare<double>("linear.x.min_acceleration", NAN);
-    auto_declare<double>("linear.x.max_jerk", NAN);
-    auto_declare<double>("linear.x.min_jerk", NAN);
+    auto_declare<double>("traction.max_velocity", NAN);
+    auto_declare<double>("traction.min_velocity", NAN);
+    auto_declare<double>("traction.max_acceleration", NAN);
+    auto_declare<double>("traction.min_acceleration", NAN);
+    auto_declare<double>("traction.max_deceleration", NAN);
+    auto_declare<double>("traction.min_deceleration", NAN);
+    auto_declare<double>("traction.max_jerk", NAN);
+    auto_declare<double>("traction.min_jerk", NAN);
 
-    auto_declare<bool>("angular.z.has_velocity_limits", false);
-    auto_declare<bool>("angular.z.has_acceleration_limits", false);
-    auto_declare<bool>("angular.z.has_jerk_limits", false);
-    auto_declare<double>("angular.z.max_velocity", NAN);
-    auto_declare<double>("angular.z.min_velocity", NAN);
-    auto_declare<double>("angular.z.max_acceleration", NAN);
-    auto_declare<double>("angular.z.min_acceleration", NAN);
-    auto_declare<double>("angular.z.max_jerk", NAN);
-    auto_declare<double>("angular.z.min_jerk", NAN);
-    publish_rate_ = auto_declare<double>("publish_rate", publish_rate_);
+    auto_declare<double>("steering.max_position", NAN);
+    auto_declare<double>("steering.min_position", NAN);
+    auto_declare<double>("steering.max_velocity", NAN);
+    auto_declare<double>("steering.min_velocity", NAN);
+    auto_declare<double>("steering.max_acceleration", NAN);
+    auto_declare<double>("steering.min_acceleration", NAN);
   }
   catch (const std::exception & e)
   {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
-    return controller_interface::CallbackReturn::ERROR;
+    return CallbackReturn::ERROR;
   }
 
-  return controller_interface::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
 InterfaceConfiguration AckermannDriveController::command_interface_configuration() const
 {
-  std::vector<std::string> conf_names;
-  conf_names.push_back(traction_joint_name_ + "/" + HW_IF_EFFORT);
-  conf_names.push_back(steering_joint_name_ + "/" + HW_IF_EFFORT);
-  return {interface_configuration_type::INDIVIDUAL, conf_names};
+  InterfaceConfiguration command_interfaces_config;
+  command_interfaces_config.type = interface_configuration_type::INDIVIDUAL;
+  command_interfaces_config.names.push_back(traction_joint_name_ + "/" + HW_IF_EFFORT);
+  command_interfaces_config.names.push_back(steering_joint_name_ + "/" + HW_IF_EFFORT);
+  return command_interfaces_config;
 }
 
 InterfaceConfiguration AckermannDriveController::state_interface_configuration() const
 {
-  std::vector<std::string> conf_names;
-  conf_names.push_back(traction_joint_name_ + "/" + HW_IF_VELOCITY);
-  conf_names.push_back(steering_joint_name_ + "/" + HW_IF_VELOCITY);
-  conf_names.push_back(traction_joint_name_ + "/" + HW_IF_POSITION);
-  conf_names.push_back(steering_joint_name_ + "/" + HW_IF_POSITION);
-
-  return {interface_configuration_type::INDIVIDUAL, conf_names};
+  InterfaceConfiguration state_interfaces_config;
+  state_interfaces_config.type = interface_configuration_type::INDIVIDUAL;
+  state_interfaces_config.names.push_back(traction_joint_name_ + "/" + HW_IF_VELOCITY);
+  state_interfaces_config.names.push_back(steering_joint_name_ + "/" + HW_IF_POSITION);
+  return state_interfaces_config;
 }
 
 controller_interface::return_type AckermannDriveController::update(
   const rclcpp::Time & time, const rclcpp::Duration & period)
 {
-  auto logger = get_node()->get_logger();
   if (get_state().id() == State::PRIMARY_STATE_INACTIVE)
   {
     if (!is_halted)
@@ -134,13 +133,11 @@ controller_interface::return_type AckermannDriveController::update(
     }
     return controller_interface::return_type::OK;
   }
-
-  std::shared_ptr<Twist> last_command_msg;
+  std::shared_ptr<TwistStamped> last_command_msg;
   received_velocity_msg_ptr_.get(last_command_msg);
-
   if (last_command_msg == nullptr)
   {
-    RCLCPP_WARN(logger, "Velocity message received was a nullptr.");
+    RCLCPP_WARN(get_node()->get_logger(), "Velocity message received was a nullptr.");
     return controller_interface::return_type::ERROR;
   }
 
@@ -152,41 +149,26 @@ controller_interface::return_type AckermannDriveController::update(
     last_command_msg->twist.angular.z = 0.0;
   }
 
-  // command may be limited further by SpeedLimit,
+  // command may be limited further by Limiters,
   // without affecting the stored twist command
-  Twist command = *last_command_msg;
+  TwistStamped command = *last_command_msg;
   double & linear_command = command.twist.linear.x;
   double & angular_command = command.twist.angular.z;
-
-  previous_update_timestamp_ = time;
-
-  const auto steer = steer_params_;
+  double Ws_read = traction_joint_[0].velocity_state.get().get_value();     // in radians/s
+  double alpha_read = steering_transmision_ratio_ * steering_joint_[0].position_state.get().get_value();  // in radians
 
   if (odom_params_.open_loop)
   {
-    odometry_.updateOpenLoop(linear_command, angular_command, time);
+    odometry_.updateOpenLoop(linear_command, angular_command, period);
   }
   else
   {
-    const double traction_feedback =
-      registered_traction_handle_->feedback.get().get_value();
-
-    if (std::isnan(traction_feedback))
+    if (std::isnan(Ws_read) || std::isnan(alpha_read))
     {
-      RCLCPP_ERROR(
-        logger, "Traction %s is invalid", feedback_type());
+      RCLCPP_ERROR(get_node()->get_logger(), "Could not read feedback value");
       return controller_interface::return_type::ERROR;
     }
-
-    if (odom_params_.position_feedback)
-    {
-      odometry_.update(traction_feedback, traction_feedback, time);
-    }
-    else
-    {
-      odometry_.updateFromVelocity(
-        traction_feedback * period.seconds(), traction_feedback * period.seconds(), time);
-    }
+    odometry_.update(Ws_read, alpha_read, period);
   }
 
   tf2::Quaternion orientation;
@@ -200,12 +182,15 @@ controller_interface::return_type AckermannDriveController::update(
     {
       auto & odometry_message = realtime_odometry_publisher_->msg_;
       odometry_message.header.stamp = time;
-      odometry_message.pose.pose.position.x = odometry_.getX();
-      odometry_message.pose.pose.position.y = odometry_.getY();
-      odometry_message.pose.pose.orientation.x = orientation.x();
-      odometry_message.pose.pose.orientation.y = orientation.y();
-      odometry_message.pose.pose.orientation.z = orientation.z();
-      odometry_message.pose.pose.orientation.w = orientation.w();
+      if (!odom_params_.odom_only_twist)
+      {
+        odometry_message.pose.pose.position.x = odometry_.getX();
+        odometry_message.pose.pose.position.y = odometry_.getY();
+        odometry_message.pose.pose.orientation.x = orientation.x();
+        odometry_message.pose.pose.orientation.y = orientation.y();
+        odometry_message.pose.pose.orientation.z = orientation.z();
+        odometry_message.pose.pose.orientation.w = orientation.w();
+      }
       odometry_message.twist.twist.linear.x = odometry_.getLinear();
       odometry_message.twist.twist.angular.z = odometry_.getAngular();
       realtime_odometry_publisher_->unlockAndPublish();
@@ -225,115 +210,120 @@ controller_interface::return_type AckermannDriveController::update(
     }
   }
 
-  auto & last_command = previous_commands_.back().twist;
-  auto & second_to_last_command = previous_commands_.front().twist;
-  limiter_linear_.limit(
-    linear_command, last_command.linear.x, second_to_last_command.linear.x, period.seconds());
-  limiter_angular_.limit(
-    angular_command, last_command.angular.z, second_to_last_command.angular.z, period.seconds());
+  // Compute wheel velocity and angle
+  auto [alpha_write, Ws_write] = twist_to_ackermann(linear_command, angular_command);
+
+  // Reduce wheel speed until the target angle has been reached
+  double alpha_delta = abs(alpha_write - alpha_read);
+  double scale;
+  if (alpha_delta < M_PI / 6)
+  {
+    scale = 1;
+  }
+  else if (alpha_delta > M_PI_2)
+  {
+    scale = 0.01;
+  }
+  else
+  {
+    // TODO(anyone): find the best function, e.g convex power functions
+    scale = cos(alpha_delta);
+  }
+  Ws_write *= scale;
+
+  auto & last_command = previous_commands_.back();
+  auto & second_to_last_command = previous_commands_.front();
+
+  limiter_traction_.limit(
+    Ws_write, last_command.speed, second_to_last_command.speed, period.seconds());
+
+  limiter_steering_.limit(
+    alpha_write, last_command.steering_angle, second_to_last_command.steering_angle,
+    period.seconds());
 
   previous_commands_.pop();
-  previous_commands_.emplace(command);
+  AckermannDrive ackermann_command;
+  // speed in AckermannDrive is defined as desired forward speed (m/s) but it is used here as wheel
+  // speed (rad/s)
+  ackermann_command.speed = Ws_write;
+  ackermann_command.steering_angle = alpha_write;
+  previous_commands_.emplace(ackermann_command);
 
-  //    Publish limited velocity
-  if (publish_limited_velocity_ && realtime_limited_velocity_publisher_->trylock())
+  //  Publish ackermann command
+  if (publish_ackermann_command_ && realtime_ackermann_command_publisher_->trylock())
   {
-    auto & limited_velocity_command = realtime_limited_velocity_publisher_->msg_;
-    limited_velocity_command.header.stamp = time;
-    limited_velocity_command.twist = command.twist;
-    realtime_limited_velocity_publisher_->unlockAndPublish();
+    auto & realtime_ackermann_command = realtime_ackermann_command_publisher_->msg_;
+    // speed in AckermannDrive is defined desired forward speed (m/s) but we use it here as wheel
+    // speed (rad/s)
+    realtime_ackermann_command.speed = Ws_write;
+    realtime_ackermann_command.steering_angle = alpha_write;
+    realtime_ackermann_command_publisher_->unlockAndPublish();
   }
 
-  // Limit angular command based on min turning radius
-  const double angular_command_limit =
-    fabs(linear_command) / steer.min_turning_radius;
-  if (angular_command > angular_command_limit)
-  {
-    RCLCPP_WARN_ONCE(logger, "Maximum turning rate limit exceeded: %f", angular_command_limit);
-    angular_command = angular_command_limit;
-  }
-  else if (angular_command < -angular_command_limit)
-  {
-    RCLCPP_WARN_ONCE(logger, "Minimum turning rate limit exceeded: %f", -angular_command_limit);
-    angular_command = -angular_command_limit;
-  }
+  double Ws_effort =
+    traction_pid_.computeCommand(Ws_read - Ws_write, period.nanoseconds());
+  double alpha_effort =
+    steering_pid_.computeCommand(alpha_read - alpha_write, period.nanoseconds());
 
-  // Compute steering angles
-  const double current_rack_pos =
-    registered_steering_handle_->feedback.get().get_value();
-  static double desired_rack_pos = 0;
+  traction_joint_[0].effort_command.get().set_value(Ws_effort);
+  steering_joint_[0].effort_command.get().set_value(steering_transmision_ratio_*alpha_effort);
 
-  if (linear_command != 0)
-  {
-    const double desired_curvature = angular_command/linear_command;
-    desired_rack_pos =
-      approximate_rack_offset_from_curvature(desired_curvature);
-  }
-  const double rack_pos_error = current_rack_pos - desired_rack_pos;
-  const double rack_effort = -ctrl_.rack_kp*rack_pos_error;
-
-  // Set traction velocity:
-  registered_traction_handle_->control.get().set_value(linear_command);
-
-  // Set steering angles
-  registered_steering_handle_->control.get().set_value(rack_effort);
-  static int cnt = 0;
-  if (cnt++ % 50 == 0)
-  {
-    RCLCPP_INFO(logger, "Desired rack position: %f", desired_rack_pos);
-    // RCLCPP_INFO(logger, "Rack error: %f", rack_pos_error);
-    // RCLCPP_INFO(logger, "Rack effort: %f", rack_effort);
-  }
+  RCLCPP_INFO(
+    get_node()->get_logger(),
+    "Linear command, Ws read, write, effort: %f, %f, %f, %f",
+    linear_command, Ws_read, Ws_write, Ws_effort);
+  RCLCPP_INFO(
+    get_node()->get_logger(),
+    "Angular command, alpha read, write, effort: %f, %f, %f, %f",
+    angular_command, alpha_read, alpha_write, alpha_effort);
+  // static unsigned int i = 0;
+  // if (i++ >= 100)
+  // {
+  //   i = 0;
+  //   RCLCPP_INFO(get_node()->get_logger(), "Period: %ld", period.nanoseconds());
+  //   RCLCPP_INFO(get_node()->get_logger(), "Age of last command: %ld", age_of_last_command.nanoseconds());
+  // }
 
   return controller_interface::return_type::OK;
 }
 
-controller_interface::CallbackReturn AckermannDriveController::on_configure(
-  const rclcpp_lifecycle::State &)
+CallbackReturn AckermannDriveController::on_configure(const rclcpp_lifecycle::State & /*previous_state*/)
 {
   auto logger = get_node()->get_logger();
 
   // update parameters
   traction_joint_name_ = get_node()->get_parameter("traction_joint_name").as_string();
   steering_joint_name_ = get_node()->get_parameter("steering_joint_name").as_string();
+  if (traction_joint_name_.empty())
+  {
+    RCLCPP_ERROR(logger, "'traction_joint_name' parameter was empty");
+    return CallbackReturn::ERROR;
+  }
+  if (steering_joint_name_.empty())
+  {
+    RCLCPP_ERROR(logger, "'steering_joint_name' parameter was empty");
+    return CallbackReturn::ERROR;
+  }
 
-  wheel_params_.separation = get_node()->get_parameter("wheel_separation").as_double();
+  auto traction_pid_params =
+    get_node()->get_parameter("traction_pid_params").as_double_array();
+  std::copy(
+    traction_pid_params.begin(), traction_pid_params.end(),
+    traction_pid_params_.begin());
+
+  auto steering_pid_params =
+    get_node()->get_parameter("steering_pid_params").as_double_array();
+  std::copy(
+    steering_pid_params.begin(), steering_pid_params.end(),
+    steering_pid_params_.begin());
+
+  wheel_params_.wheelbase = get_node()->get_parameter("wheelbase").as_double();
   wheel_params_.radius = get_node()->get_parameter("wheel_radius").as_double();
 
-  const auto wheels = wheel_params_;
+  steering_transmision_ratio_ =
+    get_node()->get_parameter("steering_transmision_ratio").as_double();
 
-  steer_params_.wheel_base = get_node()->get_parameter("wheel_base").as_double();
-  steer_params_.pivot_distance =
-    get_node()->get_parameter("pivot_distance").as_double();
-  steer_params_.steering_arm_1 =
-    get_node()->get_parameter("steering_arm_1").as_double();
-  steer_params_.steering_arm_2 =
-    get_node()->get_parameter("steering_arm_2").as_double();
-  steer_params_.rack_distance =
-    get_node()->get_parameter("rack_distance").as_double();
-  steer_params_.rack_limit =
-    get_node()->get_parameter("rack_limit").as_double();
-  steer_params_.lut_size =
-    get_node()->get_parameter("lut_size").as_int();
-
-
-  steer_params_.ackermann_angle =
-    atan(steer_params_.pivot_distance/steer_params_.wheel_base/2);
-  steer_params_.rack_initial_position = rack_position_from_steering_angle(0);
-  steer_params_.steering_angle_limit =
-    fabs(steering_angle_from_rack_offset(steer_params_.rack_limit));
-  steer_params_.min_turning_radius =
-    steer_params_.wheel_base / tan(steer_params_.steering_angle_limit);
-
-  RCLCPP_INFO(get_node()->get_logger(),
-              "Steering angle limit: %f",
-              steer_params_.steering_angle_limit);
-
-  ctrl_.rack_kp = get_node()->get_parameter("rack_kp").as_double();
-  ctrl_.rack_ki = get_node()->get_parameter("rack_ki").as_double();
-  ctrl_.rack_kd = get_node()->get_parameter("rack_kd").as_double();
-
-  odometry_.setWheelParams(wheels.separation, wheels.radius, wheels.radius);
+  odometry_.setWheelParams(wheel_params_.wheelbase, wheel_params_.radius);
   odometry_.setVelocityRollingWindowSize(
     get_node()->get_parameter("velocity_rolling_window_size").as_int());
 
@@ -349,76 +339,80 @@ controller_interface::CallbackReturn AckermannDriveController::on_configure(
     twist_diagonal.begin(), twist_diagonal.end(), odom_params_.twist_covariance_diagonal.begin());
 
   odom_params_.open_loop = get_node()->get_parameter("open_loop").as_bool();
-  odom_params_.position_feedback = get_node()->get_parameter("position_feedback").as_bool();
   odom_params_.enable_odom_tf = get_node()->get_parameter("enable_odom_tf").as_bool();
+  odom_params_.odom_only_twist = get_node()->get_parameter("odom_only_twist").as_bool();
 
-  cmd_vel_timeout_ = std::chrono::milliseconds{
-    static_cast<int>(get_node()->get_parameter("cmd_vel_timeout").as_double() * 1000.0)};
-  publish_limited_velocity_ = get_node()->get_parameter("publish_limited_velocity").as_bool();
+  cmd_vel_timeout_ =
+    std::chrono::milliseconds{get_node()->get_parameter("cmd_vel_timeout").as_int()};
+  publish_ackermann_command_ = get_node()->get_parameter("publish_ackermann_command").as_bool();
   use_stamped_vel_ = get_node()->get_parameter("use_stamped_vel").as_bool();
 
+  publish_rate_ = get_node()->get_parameter("publish_rate").as_double();
+  publish_period_ = rclcpp::Duration::from_seconds(1.0 / publish_rate_);
+
   try
   {
-    limiter_linear_ = SpeedLimiter(
-      get_node()->get_parameter("linear.x.has_velocity_limits").as_bool(),
-      get_node()->get_parameter("linear.x.has_acceleration_limits").as_bool(),
-      get_node()->get_parameter("linear.x.has_jerk_limits").as_bool(),
-      get_node()->get_parameter("linear.x.min_velocity").as_double(),
-      get_node()->get_parameter("linear.x.max_velocity").as_double(),
-      get_node()->get_parameter("linear.x.min_acceleration").as_double(),
-      get_node()->get_parameter("linear.x.max_acceleration").as_double(),
-      get_node()->get_parameter("linear.x.min_jerk").as_double(),
-      get_node()->get_parameter("linear.x.max_jerk").as_double());
+    limiter_traction_ = TractionLimiter(
+      get_node()->get_parameter("traction.min_velocity").as_double(),
+      get_node()->get_parameter("traction.max_velocity").as_double(),
+      get_node()->get_parameter("traction.min_acceleration").as_double(),
+      get_node()->get_parameter("traction.max_acceleration").as_double(),
+      get_node()->get_parameter("traction.min_deceleration").as_double(),
+      get_node()->get_parameter("traction.max_deceleration").as_double(),
+      get_node()->get_parameter("traction.min_jerk").as_double(),
+      get_node()->get_parameter("traction.max_jerk").as_double());
   }
-  catch (const std::runtime_error & e)
+  catch (const std::invalid_argument & e)
   {
-    RCLCPP_ERROR(get_node()->get_logger(), "Error configuring linear speed limiter: %s", e.what());
+    RCLCPP_ERROR(get_node()->get_logger(), "Error configuring traction limiter: %s", e.what());
+    return CallbackReturn::ERROR;
   }
 
   try
   {
-    limiter_angular_ = SpeedLimiter(
-      get_node()->get_parameter("angular.z.has_velocity_limits").as_bool(),
-      get_node()->get_parameter("angular.z.has_acceleration_limits").as_bool(),
-      get_node()->get_parameter("angular.z.has_jerk_limits").as_bool(),
-      get_node()->get_parameter("angular.z.min_velocity").as_double(),
-      get_node()->get_parameter("angular.z.max_velocity").as_double(),
-      get_node()->get_parameter("angular.z.min_acceleration").as_double(),
-      get_node()->get_parameter("angular.z.max_acceleration").as_double(),
-      get_node()->get_parameter("angular.z.min_jerk").as_double(),
-      get_node()->get_parameter("angular.z.max_jerk").as_double());
+    limiter_steering_ = SteeringLimiter(
+      get_node()->get_parameter("steering.min_position").as_double(),
+      get_node()->get_parameter("steering.max_position").as_double(),
+      get_node()->get_parameter("steering.min_velocity").as_double(),
+      get_node()->get_parameter("steering.max_velocity").as_double(),
+      get_node()->get_parameter("steering.min_acceleration").as_double(),
+      get_node()->get_parameter("steering.max_acceleration").as_double());
   }
-  catch (const std::runtime_error & e)
+  catch (const std::invalid_argument & e)
   {
-    RCLCPP_ERROR(get_node()->get_logger(), "Error configuring angular speed limiter: %s", e.what());
+    RCLCPP_ERROR(get_node()->get_logger(), "Error configuring steering limiter: %s", e.what());
+    return CallbackReturn::ERROR;
   }
 
   if (!reset())
   {
-    return controller_interface::CallbackReturn::ERROR;
+    return CallbackReturn::ERROR;
   }
 
-  if (publish_limited_velocity_)
-  {
-    limited_velocity_publisher_ =
-      get_node()->create_publisher<Twist>(DEFAULT_COMMAND_OUT_TOPIC, rclcpp::SystemDefaultsQoS());
-    realtime_limited_velocity_publisher_ =
-      std::make_shared<realtime_tools::RealtimePublisher<Twist>>(limited_velocity_publisher_);
-  }
-
-  const Twist empty_twist;
-  received_velocity_msg_ptr_.set(std::make_shared<Twist>(empty_twist));
+  const TwistStamped empty_twist;
+  received_velocity_msg_ptr_.set(std::make_shared<TwistStamped>(empty_twist));
 
   // Fill last two commands with default constructed commands
-  previous_commands_.emplace(empty_twist);
-  previous_commands_.emplace(empty_twist);
+  const AckermannDrive empty_ackermann_drive;
+  previous_commands_.emplace(empty_ackermann_drive);
+  previous_commands_.emplace(empty_ackermann_drive);
+
+  // initialize ackermann command publisher
+  if (publish_ackermann_command_)
+  {
+    ackermann_command_publisher_ = get_node()->create_publisher<AckermannDrive>(
+      DEFAULT_ACKERMANN_OUT_TOPIC, rclcpp::SystemDefaultsQoS());
+    realtime_ackermann_command_publisher_ =
+      std::make_shared<realtime_tools::RealtimePublisher<AckermannDrive>>(
+        ackermann_command_publisher_);
+  }
 
   // initialize command subscriber
   if (use_stamped_vel_)
   {
-    velocity_command_subscriber_ = get_node()->create_subscription<Twist>(
+    velocity_command_subscriber_ = get_node()->create_subscription<TwistStamped>(
       DEFAULT_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(),
-      [this](const std::shared_ptr<Twist> msg) -> void
+      [this](const std::shared_ptr<TwistStamped> msg) -> void
       {
         if (!subscriber_is_active_)
         {
@@ -439,24 +433,23 @@ controller_interface::CallbackReturn AckermannDriveController::on_configure(
   }
   else
   {
-    velocity_command_unstamped_subscriber_ =
-      get_node()->create_subscription<geometry_msgs::msg::Twist>(
-        DEFAULT_COMMAND_UNSTAMPED_TOPIC, rclcpp::SystemDefaultsQoS(),
-        [this](const std::shared_ptr<geometry_msgs::msg::Twist> msg) -> void
+    velocity_command_unstamped_subscriber_ = get_node()->create_subscription<Twist>(
+      DEFAULT_COMMAND_TOPIC, rclcpp::SystemDefaultsQoS(),
+      [this](const std::shared_ptr<Twist> msg) -> void
+      {
+        if (!subscriber_is_active_)
         {
-          if (!subscriber_is_active_)
-          {
-            RCLCPP_WARN(
-              get_node()->get_logger(), "Can't accept new commands. subscriber is inactive");
-            return;
-          }
+          RCLCPP_WARN(
+            get_node()->get_logger(), "Can't accept new commands. subscriber is inactive");
+          return;
+        }
 
-          // Write fake header in the stored stamped command
-          std::shared_ptr<Twist> twist_stamped;
-          received_velocity_msg_ptr_.get(twist_stamped);
-          twist_stamped->twist = *msg;
-          twist_stamped->header.stamp = get_node()->get_clock()->now();
-        });
+        // Write fake header in the stored stamped command
+        std::shared_ptr<TwistStamped> twist_stamped;
+        received_velocity_msg_ptr_.get(twist_stamped);
+        twist_stamped->twist = *msg;
+        twist_stamped->header.stamp = get_node()->get_clock()->now();
+      });
   }
 
   // initialize odometry publisher and messasge
@@ -470,9 +463,6 @@ controller_interface::CallbackReturn AckermannDriveController::on_configure(
   odometry_message.header.frame_id = odom_params_.odom_frame_id;
   odometry_message.child_frame_id = odom_params_.base_frame_id;
 
-  // limit the publication on the topics /odom and /tf
-  publish_rate_ = get_node()->get_parameter("publish_rate").as_double();
-  publish_period_ = rclcpp::Duration::from_seconds(1.0 / publish_rate_);
   previous_publish_timestamp_ = get_node()->get_clock()->now();
 
   // initialize odom values zeros
@@ -490,72 +480,102 @@ controller_interface::CallbackReturn AckermannDriveController::on_configure(
   }
 
   // initialize transform publisher and message
-  odometry_transform_publisher_ = get_node()->create_publisher<tf2_msgs::msg::TFMessage>(
-    DEFAULT_TRANSFORM_TOPIC, rclcpp::SystemDefaultsQoS());
-  realtime_odometry_transform_publisher_ =
-    std::make_shared<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>>(
-      odometry_transform_publisher_);
+  if (odom_params_.enable_odom_tf)
+  {
+    odometry_transform_publisher_ = get_node()->create_publisher<tf2_msgs::msg::TFMessage>(
+      DEFAULT_TRANSFORM_TOPIC, rclcpp::SystemDefaultsQoS());
+    realtime_odometry_transform_publisher_ =
+      std::make_shared<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>>(
+        odometry_transform_publisher_);
 
-  // keeping track of odom and base_link transforms only
-  auto & odometry_transform_message = realtime_odometry_transform_publisher_->msg_;
-  odometry_transform_message.transforms.resize(1);
-  odometry_transform_message.transforms.front().header.frame_id = odom_params_.odom_frame_id;
-  odometry_transform_message.transforms.front().child_frame_id = odom_params_.base_frame_id;
+    // keeping track of odom and base_link transforms only
+    auto & odometry_transform_message = realtime_odometry_transform_publisher_->msg_;
+    odometry_transform_message.transforms.resize(1);
+    odometry_transform_message.transforms.front().header.frame_id = odom_params_.odom_frame_id;
+    odometry_transform_message.transforms.front().child_frame_id = odom_params_.base_frame_id;
+  }
 
-  previous_update_timestamp_ = get_node()->get_clock()->now();
-  return controller_interface::CallbackReturn::SUCCESS;
+  // Create odom reset service
+  reset_odom_service_ = get_node()->create_service<std_srvs::srv::Empty>(
+    DEFAULT_RESET_ODOM_SERVICE, std::bind(
+                                  &AckermannDriveController::reset_odometry, this, std::placeholders::_1,
+                                  std::placeholders::_2, std::placeholders::_3));
+
+  return CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn AckermannDriveController::on_activate(
-  const rclcpp_lifecycle::State &)
+CallbackReturn AckermannDriveController::on_activate(const rclcpp_lifecycle::State &)
 {
-  const auto traction_result =
-    configure_joint(traction_joint_name_, feedback_type(), HW_IF_EFFORT);
-  const auto steer_result =
-    configure_joint(steering_joint_name_, HW_IF_POSITION, HW_IF_EFFORT);
+  RCLCPP_INFO(get_node()->get_logger(), "On activate: Initialize Joints");
 
-  if (
-    traction_result == controller_interface::CallbackReturn::ERROR ||
-    steer_result == controller_interface::CallbackReturn::ERROR)
+  // Initialize the joints
+  const auto wheel_front_result = get_traction(traction_joint_name_, traction_joint_);
+  const auto steering_result = get_steering(steering_joint_name_, steering_joint_);
+  if (wheel_front_result == CallbackReturn::ERROR || steering_result == CallbackReturn::ERROR)
   {
-    return controller_interface::CallbackReturn::ERROR;
+    return CallbackReturn::ERROR;
   }
-  registered_traction_handle_ = &registered_joint_handles_[0];
-  registered_steering_handle_ = &registered_joint_handles_[1];
+  if (traction_joint_.empty() || steering_joint_.empty())
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Either steering or traction interfaces are non existent");
+    return CallbackReturn::ERROR;
+  }
+
+  traction_pid_.initPid(
+    traction_pid_params_[0], traction_pid_params_[1],
+    traction_pid_params_[2], traction_pid_params_[3],
+    traction_pid_params_[4], false);
+  steering_pid_.initPid(
+    steering_pid_params_[0], steering_pid_params_[1],
+    steering_pid_params_[2], steering_pid_params_[3],
+    steering_pid_params_[4], false);
+
+  auto gains = traction_pid_.getGains();
+  RCLCPP_INFO(get_node()->get_logger(), "Traction gains: %f, %f %f", gains.p_gain_, gains.i_gain_, gains.d_gain_);
+  gains = steering_pid_.getGains();
+  RCLCPP_INFO(get_node()->get_logger(), "Steering gains: %f, %f %f", gains.p_gain_, gains.i_gain_, gains.d_gain_);
 
   is_halted = false;
   subscriber_is_active_ = true;
 
   RCLCPP_DEBUG(get_node()->get_logger(), "Subscriber and publisher are now active.");
-  return controller_interface::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn AckermannDriveController::on_deactivate(
-  const rclcpp_lifecycle::State &)
+CallbackReturn AckermannDriveController::on_deactivate(const rclcpp_lifecycle::State &)
 {
   subscriber_is_active_ = false;
-  return controller_interface::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn AckermannDriveController::on_cleanup(
-  const rclcpp_lifecycle::State &)
+CallbackReturn AckermannDriveController::on_cleanup(const rclcpp_lifecycle::State &)
 {
   if (!reset())
   {
-    return controller_interface::CallbackReturn::ERROR;
+    return CallbackReturn::ERROR;
   }
 
-  received_velocity_msg_ptr_.set(std::make_shared<Twist>());
-  return controller_interface::CallbackReturn::SUCCESS;
+  received_velocity_msg_ptr_.set(std::make_shared<TwistStamped>());
+  return CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn AckermannDriveController::on_error(const rclcpp_lifecycle::State &)
+CallbackReturn AckermannDriveController::on_error(const rclcpp_lifecycle::State &)
 {
   if (!reset())
   {
-    return controller_interface::CallbackReturn::ERROR;
+    return CallbackReturn::ERROR;
   }
-  return controller_interface::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
+}
+
+void AckermannDriveController::reset_odometry(
+  const std::shared_ptr<rmw_request_id_t> /*request_header*/,
+  const std::shared_ptr<std_srvs::srv::Empty::Request> /*req*/,
+  std::shared_ptr<std_srvs::srv::Empty::Response> /*res*/)
+{
+  odometry_.resetOdometry();
+  RCLCPP_INFO(get_node()->get_logger(), "Odometry successfully reset");
 }
 
 bool AckermannDriveController::reset()
@@ -563,10 +583,11 @@ bool AckermannDriveController::reset()
   odometry_.resetOdometry();
 
   // release the old queue
-  std::queue<Twist> empty;
-  std::swap(previous_commands_, empty);
+  std::queue<AckermannDrive> empty_ackermann_drive;
+  std::swap(previous_commands_, empty_ackermann_drive);
 
-  registered_joint_handles_.clear();
+  traction_joint_.clear();
+  steering_joint_.clear();
 
   subscriber_is_active_ = false;
   velocity_command_subscriber_.reset();
@@ -577,131 +598,131 @@ bool AckermannDriveController::reset()
   return true;
 }
 
-controller_interface::CallbackReturn AckermannDriveController::on_shutdown(
-  const rclcpp_lifecycle::State &)
+CallbackReturn AckermannDriveController::on_shutdown(const rclcpp_lifecycle::State &)
 {
-  return controller_interface::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
 void AckermannDriveController::halt()
 {
-  for (const auto & joint_handle : registered_joint_handles_)
-  {
-    joint_handle.control.get().set_value(0.0);
-  }
+  traction_joint_[0].effort_command.get().set_value(0.0);
+  steering_joint_[0].effort_command.get().set_value(0.0);
 }
 
-controller_interface::CallbackReturn AckermannDriveController::configure_joint(
-  const std::string & joint_name, const char * state_interface_name,
-  const char * command_interface_name)
+CallbackReturn AckermannDriveController::get_traction(
+  const std::string & traction_joint_name, std::vector<TractionHandle> & joint)
 {
-  auto logger = get_node()->get_logger();
+  RCLCPP_INFO(get_node()->get_logger(), "Get Wheel Joint Instance");
+
+  // Lookup the velocity state interface
   const auto state_handle = std::find_if(
     state_interfaces_.cbegin(), state_interfaces_.cend(),
-    [&joint_name, &state_interface_name](const auto & interface)
+    [&traction_joint_name](const auto & interface)
     {
-      return interface.get_prefix_name() == joint_name &&
-             interface.get_interface_name() == state_interface_name;
+      return interface.get_prefix_name() == traction_joint_name &&
+             interface.get_interface_name() == HW_IF_VELOCITY;
     });
-
   if (state_handle == state_interfaces_.cend())
   {
-    RCLCPP_ERROR(logger, "Unable to obtain joint state handle for %s", joint_name.c_str());
-    return controller_interface::CallbackReturn::ERROR;
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Unable to obtain joint state handle for %s",
+      traction_joint_name.c_str());
+    return CallbackReturn::ERROR;
   }
 
+  // Lookup the effort command interface
   const auto command_handle = std::find_if(
     command_interfaces_.begin(), command_interfaces_.end(),
-    [&joint_name, &command_interface_name](const auto & interface)
+    [&traction_joint_name](const auto & interface)
     {
-      return interface.get_prefix_name() == joint_name &&
-             interface.get_interface_name() == command_interface_name;
+      return interface.get_prefix_name() == traction_joint_name &&
+             interface.get_interface_name() == HW_IF_EFFORT;
     });
-
   if (command_handle == command_interfaces_.end())
   {
-    RCLCPP_ERROR(logger, "Unable to obtain joint command handle for %s", joint_name.c_str());
-    return controller_interface::CallbackReturn::ERROR;
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Unable to obtain joint state handle for %s",
+      traction_joint_name.c_str());
+    return CallbackReturn::ERROR;
   }
 
-  registered_joint_handles_.emplace_back(
-    JointHandle{std::ref(*state_handle), std::ref(*command_handle)});
-
-  return controller_interface::CallbackReturn::SUCCESS;
+  // Create the traction joint instance
+  joint.emplace_back(TractionHandle{std::ref(*state_handle), std::ref(*command_handle)});
+  return CallbackReturn::SUCCESS;
 }
 
-void AckermannDriveController::generate_lookup_tables()
+CallbackReturn AckermannDriveController::get_steering(
+  const std::string & steering_joint_name, std::vector<SteeringHandle> & joint)
 {
-  const double rack_offset_per_step =
-    steer_params_.rack_limit/(steer_params_.lut_size - 1);
-  const double curvature_offset_per_step =
-    steer_params_.steering_angle_limit/(steer_params_.lut_size - 1);
+  RCLCPP_INFO(get_node()->get_logger(), "Get Steering Joint Instance");
 
-  double rack_offset = 0;
-  double curvature = 0;
-  for (int i = 0; i < steer_params_.lut_size; i++)
+  // Lookup the velocity state interface
+  const auto state_handle = std::find_if(
+    state_interfaces_.cbegin(), state_interfaces_.cend(),
+    [&steering_joint_name](const auto & interface)
+    {
+      return interface.get_prefix_name() == steering_joint_name &&
+             interface.get_interface_name() == HW_IF_POSITION;
+    });
+  if (state_handle == state_interfaces_.cend())
   {
-    rack_offset_lut_.push_back(
-      approximate_rack_offset_from_curvature(curvature));
-    curvature_lut_.push_back(
-      approximate_curvature_from_rack_offset(rack_offset));
-    RCLCPP_INFO(get_node()->get_logger(), "Rack offset: %f", rack_offset);
-    RCLCPP_INFO(get_node()->get_logger(), "Curvature: %f", curvature);
-    rack_offset += rack_offset_per_step;
-    curvature += curvature_offset_per_step;
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Unable to obtain joint state handle for %s",
+      steering_joint_name.c_str());
+    return CallbackReturn::ERROR;
   }
+
+  // Lookup the effort command interface
+  const auto command_handle = std::find_if(
+    command_interfaces_.begin(), command_interfaces_.end(),
+    [&steering_joint_name](const auto & interface)
+    {
+      return interface.get_prefix_name() == steering_joint_name &&
+             interface.get_interface_name() == HW_IF_EFFORT;
+    });
+  if (command_handle == command_interfaces_.end())
+  {
+    RCLCPP_ERROR(
+      get_node()->get_logger(), "Unable to obtain joint state handle for %s",
+      steering_joint_name.c_str());
+    return CallbackReturn::ERROR;
+  }
+
+  // Create the steering joint instance
+  joint.emplace_back(SteeringHandle{std::ref(*state_handle), std::ref(*command_handle)});
+  return CallbackReturn::SUCCESS;
 }
 
-double AckermannDriveController::rack_position_from_steering_angle(
-  const double steering_angle)
+double AckermannDriveController::convert_trans_rot_vel_to_steering_angle(
+  double Vx, double theta_dot, double wheelbase)
 {
-  const double phi = steering_angle + steer_params_.ackermann_angle;
-  const double v1 = steer_params_.steering_arm_1 * cos(phi);
-  const double h1 = steer_params_.steering_arm_1 * sin(phi);
-
-  const double v2 = steer_params_.rack_distance - v1;
-  const double h2 =
-    sqrt(steer_params_.steering_arm_2*steer_params_.steering_arm_2 - v2*v2);
-
-  return h1 + h2;
+  if (theta_dot == 0 || Vx == 0)
+  {
+    return 0;
+  }
+  return std::atan(theta_dot * wheelbase / Vx);
 }
 
-double AckermannDriveController::steering_angle_from_rack_offset(
-  double rack_offset)
+std::tuple<double, double> AckermannDriveController::twist_to_ackermann(double Vx, double theta_dot)
 {
-  const double l1 = steer_params_.steering_arm_1;
-  const double l2 = steer_params_.steering_arm_2;
-  const double rack_position =
-    rack_offset + steer_params_.rack_initial_position;
+  // using naming convention in http://users.isr.ist.utl.pt/~mir/cadeiras/robmovel/Kinematics.pdf
+  double alpha;
 
-  const double l3 = hypot(rack_position, steer_params_.rack_distance);
-  const double steering_angle =
-    atan2(steer_params_.rack_distance, rack_position) +
-    acos((l1*l1 + l3*l3 - l2*l2)/(2*l1*l3)) +
-    steer_params_.ackermann_angle - M_PI/2;
-  return steering_angle;
+  const double Ws = Vx / wheel_params_.radius;
+  if (Vx == 0)
+  {
+    alpha = 0;
+  }
+  else
+  {
+    alpha = convert_trans_rot_vel_to_steering_angle(
+      Vx, theta_dot, wheel_params_.wheelbase);
+  }
+  return std::make_tuple(alpha, Ws);
 }
 
-double AckermannDriveController::approximate_rack_offset_from_curvature(
-  const double curvature)
-{
-  const double steering_angle = atan(steer_params_.wheel_base*curvature);
-  const double rack_offset =
-    steering_angle*steer_params_.rack_limit/steer_params_.steering_angle_limit;
-  return rack_offset;
-}
-
-double AckermannDriveController::approximate_curvature_from_rack_offset(
-  const double rack_offset)
-{
-  const double steering_angle =
-    rack_offset*steer_params_.steering_angle_limit/steer_params_.rack_limit;
-  const double curvature = tan(steering_angle)/steer_params_.wheel_base;
-  return curvature;
-}
 }  // namespace ackermann_drive_controller
 
-#include "class_loader/register_macro.hpp"
-
-CLASS_LOADER_REGISTER_CLASS(
+#include <pluginlib/class_list_macros.hpp>
+PLUGINLIB_EXPORT_CLASS(
   ackermann_drive_controller::AckermannDriveController, controller_interface::ControllerInterface)
