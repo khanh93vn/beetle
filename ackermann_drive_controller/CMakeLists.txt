@@ -41,7 +41,7 @@ target_include_directories(${PROJECT_NAME}
 ament_target_dependencies(${PROJECT_NAME} ${THIS_PACKAGE_INCLUDE_DEPENDS})
 # Causes the visibility macros to use dllexport rather than dllimport,
 # which is appropriate when building the dll but not consuming it.
-target_compile_definitions(${PROJECT_NAME} PRIVATE "DIFF_DRIVE_CONTROLLER_BUILDING_DLL")
+target_compile_definitions(${PROJECT_NAME} PRIVATE "ACKERMANN_DRIVE_CONTROLLER_BUILDING_DLL")
 pluginlib_export_plugin_description_file(controller_interface ackermann_drive_plugin.xml)
 
 install(DIRECTORY include/
