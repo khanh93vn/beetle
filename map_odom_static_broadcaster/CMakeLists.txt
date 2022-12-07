@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(beetle_msg_forwarder)
+project(map_odom_static_broadcaster)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -7,29 +7,25 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(beetle_msgs REQUIRED)
-find_package(nav_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(rclcpp REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 
-add_executable(beetle_msg_forwarder src/beetle_msg_forwarder.cpp)
-target_include_directories(beetle_msg_forwarder PUBLIC
+add_executable(map_odom_static_broadcaster src/map_odom_static_broadcaster.cpp)
+target_include_directories(map_odom_static_broadcaster PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
-target_compile_features(beetle_msg_forwarder PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+target_compile_features(map_odom_static_broadcaster PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 ament_target_dependencies(
-  beetle_msg_forwarder
-  rclcpp
-  beetle_msgs
-  nav_msgs
-  geometry_msgs
-  tf2
-  tf2_ros
+  map_odom_static_broadcaster
+  "geometry_msgs"
+  "rclcpp"
+  "tf2"
+  "tf2_ros"
 )
 
-install(TARGETS beetle_msg_forwarder
+install(TARGETS map_odom_static_broadcaster
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)

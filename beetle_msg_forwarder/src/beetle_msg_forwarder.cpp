@@ -9,6 +9,9 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "beetle_msgs/msg/twist_lite.hpp"
 #include "beetle_msgs/msg/odometry_lite.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
+#include "tf2/LinearMath/Quaternion.h"
+#include "tf2_ros/transform_broadcaster.h"
 
 using std::placeholders::_1;
 using namespace std::chrono_literals;
@@ -27,6 +30,12 @@ class BeetleMsgForwarder : public rclcpp::Node
       // prepare publish data
       odom_.header.frame_id = std::string("odom");
       odom_.child_frame_id = std::string("base_link");
+
+      // prepare tf broadcaster
+      odom_tf_broadcaster_ =
+        std::make_shared<tf2_ros::TransformBroadcaster>(this);
+      odom_tf_transform_.header.frame_id = std::string("odom");
+      odom_tf_transform_.child_frame_id = std::string("base_link");
 
       // create callback group
       odom_cb_group_ = this->create_callback_group(
@@ -55,7 +64,10 @@ class BeetleMsgForwarder : public rclcpp::Node
   private:
     void odom_subs_callback( const beetle_msgs::msg::OdometryLite & odom_lite)
     {
-      odom_.header.stamp = this->get_clock()->now();
+      auto now = this->get_clock()->now();
+
+      // publish odom msg
+      odom_.header.stamp = now;
       odom_.pose.pose.position.x = odom_lite.pose.x;
       odom_.pose.pose.position.y = odom_lite.pose.y;
       odom_.pose.pose.orientation.z = sin(odom_lite.pose.theta);
@@ -64,6 +76,15 @@ class BeetleMsgForwarder : public rclcpp::Node
       odom_.twist.twist.angular.z = odom_lite.twist.angular;
 
       odometry_publisher_->publish(odom_);
+
+      // broadcast transform
+      odom_tf_transform_.header.stamp = now;
+      odom_tf_transform_.transform.translation.x = odom_.pose.pose.position.x;
+      odom_tf_transform_.transform.translation.y = odom_.pose.pose.position.y;
+      odom_tf_transform_.transform.rotation.z = odom_.pose.pose.orientation.z;
+      odom_tf_transform_.transform.rotation.w = odom_.pose.pose.orientation.w;
+
+      odom_tf_broadcaster_->sendTransform(odom_tf_transform_);
     }
 
     void cmd_vel_subs_callback( const geometry_msgs::msg::Twist & cmd_vel)
@@ -76,6 +97,7 @@ class BeetleMsgForwarder : public rclcpp::Node
 
     nav_msgs::msg::Odometry odom_;
     beetle_msgs::msg::TwistLite cmd_vel_lite_;
+    geometry_msgs::msg::TransformStamped odom_tf_transform_;
 
     rclcpp::CallbackGroup::SharedPtr odom_cb_group_;
     rclcpp::CallbackGroup::SharedPtr cmd_vel_cb_group_;
@@ -83,8 +105,10 @@ class BeetleMsgForwarder : public rclcpp::Node
     rclcpp::Publisher<beetle_msgs::msg::TwistLite>::SharedPtr cmd_vel_publisher_;
     rclcpp::Subscription<beetle_msgs::msg::OdometryLite>::SharedPtr
       odometry_subscription_;
-      rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr
-        cmd_vel_subscription_;
+    rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr
+      cmd_vel_subscription_;
+
+    std::shared_ptr<tf2_ros::TransformBroadcaster> odom_tf_broadcaster_;
 };
 
 int main(int argc, char * argv[])

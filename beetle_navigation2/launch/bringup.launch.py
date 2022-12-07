@@ -10,7 +10,7 @@ from launch.actions import (
 from launch.conditions import IfCondition, UnlessCondition
 from launch.events import Shutdown
 from launch.event_handlers import OnProcessExit
-from launch.substitutions import Command, LaunchConfiguration
+from launch.substitutions import Command, LaunchConfiguration, NotSubstitution
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
@@ -18,6 +18,7 @@ from nav2_common.launch import RewrittenYaml
 
 def generate_launch_description():
     beetle_gazebo_dir = FindPackageShare(package='beetle_gazebo').find('beetle_gazebo')
+    # beetle_driver_dir = FindPackageShare(package='beetle_driver').find('beetle_driver')
     beetle_nav_dir = FindPackageShare(package='beetle_navigation2').find('beetle_navigation2')
     bringup_dir = FindPackageShare(package='nav2_bringup').find('nav2_bringup')
     default_world_file = os.path.join(beetle_gazebo_dir, 'worlds/empty.world')
@@ -27,6 +28,7 @@ def generate_launch_description():
 
     # Create launch configuration variables
     autostart = LaunchConfiguration('autostart')
+    use_ekf = LaunchConfiguration('use_ekf')
     use_simulator = LaunchConfiguration('use_simulator')
     use_sim_time = LaunchConfiguration('use_sim_time')
     use_rviz = LaunchConfiguration('use_rviz')
@@ -41,6 +43,7 @@ def generate_launch_description():
     # Rewrite params in files
     param_substitutions = {
         'use_sim_time': use_sim_time,
+        'use_odom_tf': NotSubstitution(use_ekf),
         'yaml_filename': map_yaml_file,
         'default_nav_to_pose_bt_xml': default_nav_to_pose_bt_xml,
         'default_nav_through_poses_bt_xml': default_nav_through_poses_bt_xml}
@@ -57,6 +60,9 @@ def generate_launch_description():
     declare_autostart_cmd = DeclareLaunchArgument(
         'autostart', default_value='true',
         description='Automatically startup the nav2 stack')
+    declare_use_ekf_cmd = DeclareLaunchArgument(
+        'use_ekf', default_value='False',
+        description='Use Extended Kalman Filter to fuse sensors')
     declare_use_simulator_cmd = DeclareLaunchArgument(
         'use_simulator',
         default_value='true',
@@ -103,6 +109,14 @@ def generate_launch_description():
                           'world_file': world_file,
                           'rviz_config_file': rviz_config_file,
                           'log_level': log_level}.items())
+    # start_robot = IncludeLaunchDescription(
+    #     PythonLaunchDescriptionSource(
+    #         os.path.join(beetle_driver_dir, 'launch', 'robot.launch.py')),
+    #     condition=UnlessCondition(use_simulator),
+    #     launch_arguments={'use_rviz': use_rviz,
+    #                       'params_file': params_file,
+    #                       'rviz_config_file': rviz_config_file,
+    #                       'log_level': log_level}.items())
     bringup_cmd_group = GroupAction([
         Node(
             condition=IfCondition(use_composition),
@@ -117,6 +131,7 @@ def generate_launch_description():
                 os.path.join(beetle_nav_dir, 'launch', 'localization.launch.py')),
             launch_arguments={'use_sim_time': use_sim_time,
                               'autostart': autostart,
+                              'use_ekf': use_ekf,
                               'use_composition': use_composition,
                               'params_file': params_file,
                               'use_respawn': use_respawn,
@@ -140,6 +155,7 @@ def generate_launch_description():
     # Declare launch options
     ld.add_action(stdout_linebuf_envvar)
     ld.add_action(declare_autostart_cmd)
+    ld.add_action(declare_use_ekf_cmd)
     ld.add_action(declare_use_simulator_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_use_rviz_cmd)

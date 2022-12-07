@@ -1,17 +1,16 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>beetle_msg_forwarder</name>
+  <name>map_odom_static_broadcaster</name>
   <version>0.0.0</version>
-  <description>Nodes for forwarding messages from microcontroller</description>
+  <description>Mock broadcaster to broadcast transform between map and odom</description>
   <maintainer email="khanh93vn@gmail.com">khanh</maintainer>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <depend>geometry_msgs</depend>
   <depend>rclcpp</depend>
-  <depend>beetle_msgs</depend>
-  <depend>nav_msgs</depend>
   <depend>tf2</depend>
   <depend>tf2_ros</depend>
 

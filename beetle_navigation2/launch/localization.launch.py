@@ -4,7 +4,7 @@ from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, GroupAction, SetEnvironmentVariable
-from launch.conditions import IfCondition
+from launch.conditions import IfCondition, UnlessCondition
 from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import LoadComposableNodes
 from launch_ros.actions import Node
@@ -20,6 +20,7 @@ def generate_launch_description():
     map_yaml_file = LaunchConfiguration('map')
     use_sim_time = LaunchConfiguration('use_sim_time')
     autostart = LaunchConfiguration('autostart')
+    use_ekf = LaunchConfiguration('use_ekf')
     params_file = LaunchConfiguration('params_file')
     use_composition = LaunchConfiguration('use_composition')
     container_name = LaunchConfiguration('container_name')
@@ -59,6 +60,10 @@ def generate_launch_description():
     declare_autostart_cmd = DeclareLaunchArgument(
         'autostart', default_value='true',
         description='Automatically startup the nav2 stack')
+
+    declare_use_ekf_cmd = DeclareLaunchArgument(
+        'use_ekf', default_value='False',
+        description='Use Extended Kalman Filter to fuse sensors')
 
     declare_use_composition_cmd = DeclareLaunchArgument(
         'use_composition', default_value='False',
@@ -119,22 +124,25 @@ def generate_launch_description():
         ],
     )
     start_ekf_local = Node(
-       package='robot_localization',
-       executable='ekf_node',
-       name='ekf_filter_node_odom',
-       output='screen',
-       parameters=[configured_params],
-       arguments=['--ros-args', '--log-level', log_level],
-       remappings=[('odometry/filtered', 'odometry/local')])
+        condition=IfCondition(use_ekf),
+        package='robot_localization',
+        executable='ekf_node',
+        name='ekf_filter_node_odom',
+        output='screen',
+        parameters=[configured_params],
+        arguments=['--ros-args', '--log-level', log_level],
+        remappings=[('odometry/filtered', 'odometry/local')])
     start_ekf_global = Node(
-       package='robot_localization',
-       executable='ekf_node',
-       name='ekf_filter_node_map',
-       output='screen',
-       parameters=[configured_params],
-       arguments=['--ros-args', '--log-level', log_level],
-       remappings=[('odometry/filtered', 'odometry/global')])
+        condition=IfCondition(use_ekf),
+        package='robot_localization',
+        executable='ekf_node',
+        name='ekf_filter_node_map',
+        output='screen',
+        parameters=[configured_params],
+        arguments=['--ros-args', '--log-level', log_level],
+        remappings=[('odometry/filtered', 'odometry/global')])
     start_navsat = Node(
+        condition=IfCondition(use_ekf),
         package='robot_localization',
         executable='navsat_transform_node',
         name='navsat_transform',
@@ -146,6 +154,12 @@ def generate_launch_description():
                     ('gps/filtered', 'gps/filtered'),
                     ('odometry/gps', 'odometry/gps'),
                     ('odometry/filtered', 'odometry/global')])
+    start_mock_transformation = Node(
+        condition=UnlessCondition(use_ekf),
+        package='map_odom_static_broadcaster',
+        executable='map_odom_static_broadcaster',
+        name='map_odom_static_broadcaster',
+        output='screen')
 
     # Create the launch description and populate
     ld = LaunchDescription()
@@ -158,6 +172,7 @@ def generate_launch_description():
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_autostart_cmd)
+    ld.add_action(declare_use_ekf_cmd)
     ld.add_action(declare_use_composition_cmd)
     ld.add_action(declare_container_name_cmd)
     ld.add_action(declare_use_respawn_cmd)
@@ -169,5 +184,6 @@ def generate_launch_description():
     ld.add_action(start_ekf_local)
     ld.add_action(start_ekf_global)
     ld.add_action(start_navsat)
+    ld.add_action(start_mock_transformation)
 
     return ld
