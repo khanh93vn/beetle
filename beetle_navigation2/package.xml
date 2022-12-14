@@ -13,9 +13,11 @@
   <test_depend>ament_lint_common</test_depend>
 
   <exec_depend>robot_localization</exec_depend>
+  <exec_depend>beetle_description</exec_depend>
   <exec_depend>beetle_gazebo</exec_depend>
   <exec_depend>map_odom_static_broadcaster</exec_depend>
-  <exec_depend>beetle_driver</exec_depend>
+  <exec_depend>beetle_msg_forwarder</exec_depend>
+  <exec_depend>micro_ros_agent</exec_depend>
 
   <exec_depend>nav2_bringup</exec_depend>
   <exec_depend>nav2_common</exec_depend>

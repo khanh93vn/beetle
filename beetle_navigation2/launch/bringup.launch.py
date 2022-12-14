@@ -10,7 +10,8 @@ from launch.actions import (
 from launch.conditions import IfCondition, UnlessCondition
 from launch.events import Shutdown
 from launch.event_handlers import OnProcessExit
-from launch.substitutions import Command, LaunchConfiguration, NotSubstitution
+from launch.substitutions import (
+    Command, LaunchConfiguration, AndSubstitution, NotSubstitution)
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
@@ -18,7 +19,6 @@ from nav2_common.launch import RewrittenYaml
 
 def generate_launch_description():
     beetle_gazebo_dir = FindPackageShare(package='beetle_gazebo').find('beetle_gazebo')
-    # beetle_driver_dir = FindPackageShare(package='beetle_driver').find('beetle_driver')
     beetle_nav_dir = FindPackageShare(package='beetle_navigation2').find('beetle_navigation2')
     bringup_dir = FindPackageShare(package='nav2_bringup').find('nav2_bringup')
     default_world_file = os.path.join(beetle_gazebo_dir, 'worlds/empty.world')
@@ -42,7 +42,7 @@ def generate_launch_description():
 
     # Rewrite params in files
     param_substitutions = {
-        'use_sim_time': use_sim_time,
+        'use_sim_time': AndSubstitution(use_sim_time, use_simulator),
         'use_odom_tf': NotSubstitution(use_ekf),
         'yaml_filename': map_yaml_file,
         'default_nav_to_pose_bt_xml': default_nav_to_pose_bt_xml,
@@ -109,14 +109,13 @@ def generate_launch_description():
                           'world_file': world_file,
                           'rviz_config_file': rviz_config_file,
                           'log_level': log_level}.items())
-    # start_robot = IncludeLaunchDescription(
-    #     PythonLaunchDescriptionSource(
-    #         os.path.join(beetle_driver_dir, 'launch', 'robot.launch.py')),
-    #     condition=UnlessCondition(use_simulator),
-    #     launch_arguments={'use_rviz': use_rviz,
-    #                       'params_file': params_file,
-    #                       'rviz_config_file': rviz_config_file,
-    #                       'log_level': log_level}.items())
+    start_robot = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(beetle_nav_dir, 'launch', 'driver.launch.py')),
+        condition=UnlessCondition(use_simulator),
+        launch_arguments={'use_rviz': use_rviz,
+                          'params_file': params_file,
+                          'rviz_config_file': rviz_config_file}.items())
     bringup_cmd_group = GroupAction([
         Node(
             condition=IfCondition(use_composition),
@@ -129,7 +128,7 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 os.path.join(beetle_nav_dir, 'launch', 'localization.launch.py')),
-            launch_arguments={'use_sim_time': use_sim_time,
+            launch_arguments={'use_sim_time': AndSubstitution(use_sim_time, use_simulator),
                               'autostart': autostart,
                               'use_ekf': use_ekf,
                               'use_composition': use_composition,
@@ -171,7 +170,7 @@ def generate_launch_description():
 
     # Add conditioned actions
     ld.add_action(start_simulator)
-    # ld.add_action(start_robot_interfacing)
+    ld.add_action(start_robot)
 
     # Add actions
     ld.add_action(bringup_cmd_group)

@@ -70,8 +70,8 @@ class BeetleMsgForwarder : public rclcpp::Node
       odom_.header.stamp = now;
       odom_.pose.pose.position.x = odom_lite.pose.x;
       odom_.pose.pose.position.y = odom_lite.pose.y;
-      odom_.pose.pose.orientation.z = sin(odom_lite.pose.theta);
-      odom_.pose.pose.orientation.w = cos(odom_lite.pose.theta);
+      odom_.pose.pose.orientation.z = sin(odom_lite.pose.theta / 2);
+      odom_.pose.pose.orientation.w = cos(odom_lite.pose.theta / 2);
       odom_.twist.twist.linear.x = odom_lite.twist.linear;
       odom_.twist.twist.angular.z = odom_lite.twist.angular;
 
