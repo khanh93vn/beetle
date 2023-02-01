@@ -114,23 +114,34 @@ local_costmap:
   local_costmap:
     ros__parameters:
       update_frequency: 5.0
-      publish_frequency: 2.0
+      publish_frequency: 5.0
       global_frame: odom
       robot_base_frame: base_link
       footprint: "[ [1.687, 0.390], [1.687, -0.390], [-0.303, -0.390], [-0.303, 0.390] ]"
       use_sim_time: True
       rolling_window: true
-      width: 6
-      height: 6
+      width: 10
+      height: 10
       resolution: 0.05
-      plugins: ["static_layer"]
-      static_layer:
-        plugin: "nav2_costmap_2d::StaticLayer"
-        map_subscribe_transient_local: True
+      plugins: ["obstacle_layer"]
+      obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
-        subscribe_to_updates: False
-        transform_tolerance: 0.4
-      always_send_full_costmap: False
+        footprint_clearing_enabled: true
+        observation_sources: pointcloud
+        combination_method: 1
+        pointcloud:  # no frame set, uses frame from message
+          topic: /camera/points
+          max_obstacle_height: 2.0
+          min_obstacle_height: 0.1
+          obstacle_max_range: 5.0
+          obstacle_min_range: 0.0
+          raytrace_max_range: 6.0
+          raytrace_min_range: 0.0
+          clearing: True
+          marking: True
+          data_type: "PointCloud2"
+      always_send_full_costmap: true
 
 global_costmap:
   global_costmap:
@@ -139,21 +150,26 @@ global_costmap:
       publish_frequency: 1.0
       global_frame: map
       robot_base_frame: base_link
+      use_sim_time: false
       footprint: "[ [1.687, 0.390], [1.687, -0.390], [-0.303, -0.390], [-0.303, 0.390] ]"
-      use_sim_time: True
       rolling_window: true
-      width: 15
-      height: 15
+      static_map: true
+      width: 50
+      height: 50
       resolution: 0.05
-      track_unknown_space: false
-      plugins: ["static_layer"]
+      track_unknown_space: False
+      plugins: ["static_layer", "inflation_layer"]
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
-        map_subscribe_transient_local: True
         enabled: True
-        subscribe_to_updates: False
-        transform_tolerance: 0.4
-      always_send_full_costmap: False
+        map_subscribe_transient_local: False
+        subscribe_to_updates: True
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        enabled: true
+        inflation_radius: 1.8
+        cost_scaling_factor: 10.0
+      always_send_full_costmap: True
 
 map_server:
   ros__parameters:
@@ -186,6 +202,7 @@ planner_server:
       angle_quantization_bins: 64         # Number of angle bins for search
       analytic_expansion_ratio: 3.5       # The ratio to attempt analytic expansions during search for final approach.
       analytic_expansion_max_length: 3.0  # For Hybrid/Lattice nodes: The maximum length of the analytic expansion to be considered valid to prevent unsafe shortcutting
+      # Physicial Car Turning Radius: 4.5
       minimum_turning_radius: 2.5         # minimum turning radius in m of path / vehicle
       reverse_penalty: 2.0                # Penalty to apply if motion is reversing, must be => 1
       change_penalty: 0.0                 # Penalty to apply if motion is changing directions (L to R), must be >= 0
@@ -483,6 +500,7 @@ ackermann_drive_base_controller:
     linear.x.has_velocity_limits: true
     linear.x.has_acceleration_limits: true
     linear.x.has_jerk_limits: false
+    # Physicial Car Max Velocity: 2.7
     linear.x.max_velocity: 0.4
     linear.x.min_velocity: 0.0
     linear.x.max_acceleration: 0.4
