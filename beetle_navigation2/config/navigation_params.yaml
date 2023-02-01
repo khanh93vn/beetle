@@ -85,8 +85,8 @@ controller_server:
     general_goal_checker:
       stateful: False
       plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 0.4
-      yaw_goal_tolerance: 0.08
+      xy_goal_tolerance: 0.7
+      yaw_goal_tolerance: 0.8
     FollowPath:
       plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
       desired_linear_vel: 0.40
@@ -94,19 +94,19 @@ controller_server:
       min_lookahead_dist: 0.5
       max_lookahead_dist: 1.5
       lookahead_time: 1.0
-      transform_tolerance: 0.4
-      use_velocity_scaled_lookahead_dist: false
-      min_approach_linear_velocity: 0.35
+      transform_tolerance: 0.55
+      use_velocity_scaled_lookahead_dist: true
+      min_approach_linear_velocity: 0.25
       approach_velocity_scaling_dist: 1.0
-      use_collision_detection: false
-      max_allowed_time_to_collision_up_to_carrot: 3.0
+      use_collision_detection: true
+      max_allowed_time_to_collision_up_to_carrot: 5.0
       use_regulated_linear_velocity_scaling: true
       use_cost_regulated_linear_velocity_scaling: true
       regulated_linear_scaling_min_radius: 2.0
       regulated_linear_scaling_min_speed: 0.25
       use_rotate_to_heading: false
-      allow_reversing: true
-      max_angular_accel: 0.4
+      allow_reversing: false
+      max_angular_accel: 1.0
       max_robot_pose_search_dist: 3.0
       use_interpolation: false
 
@@ -182,11 +182,11 @@ planner_server:
       allow_unknown: true                 # allow traveling in unknown space
       max_iterations: 1000000             # maximum total iterations to search for before failing (in case unreachable), set to -1 to disable
       max_planning_time: 5.0              # max time in s for planner to plan, smooth
-      motion_model_for_search: "REEDS_SHEPP"    # Hybrid-A* Dubin, Redds-Shepp
+      motion_model_for_search: "DUBIN"    # Hybrid-A* Dubin, Redds-Shepp
       angle_quantization_bins: 64         # Number of angle bins for search
       analytic_expansion_ratio: 3.5       # The ratio to attempt analytic expansions during search for final approach.
       analytic_expansion_max_length: 3.0  # For Hybrid/Lattice nodes: The maximum length of the analytic expansion to be considered valid to prevent unsafe shortcutting
-      minimum_turning_radius: 1.8         # minimum turning radius in m of path / vehicle
+      minimum_turning_radius: 2.5         # minimum turning radius in m of path / vehicle
       reverse_penalty: 2.0                # Penalty to apply if motion is reversing, must be => 1
       change_penalty: 0.0                 # Penalty to apply if motion is changing directions (L to R), must be >= 0
       non_straight_penalty: 1.2           # Penalty to apply if motion is non-straight, must be => 1
@@ -484,7 +484,7 @@ ackermann_drive_base_controller:
     linear.x.has_acceleration_limits: true
     linear.x.has_jerk_limits: false
     linear.x.max_velocity: 0.4
-    linear.x.min_velocity: -0.4
+    linear.x.min_velocity: 0.0
     linear.x.max_acceleration: 0.4
     linear.x.max_jerk: 0.0
     linear.x.min_jerk: 0.0
