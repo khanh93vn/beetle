@@ -59,18 +59,12 @@ def generate_launch_description():
     declare_log_level_cmd = DeclareLaunchArgument(
         'log_level', default_value='info',
         description='log level')
-    # pose = {'x': LaunchConfiguration('x_pose', default='-12.00'),
-    #         'y': LaunchConfiguration('y_pose', default='10.00'),
-    #         'z': LaunchConfiguration('z_pose', default='0.70'),
-    #         'R': LaunchConfiguration('roll', default='0.00'),
-    #         'P': LaunchConfiguration('pitch', default='0.00'),
-    #         'Y': LaunchConfiguration('yaw', default='0.00')}
     pose = {'x': LaunchConfiguration('x_pose', default='0.00'),
             'y': LaunchConfiguration('y_pose', default='0.00'),
             'z': LaunchConfiguration('z_pose', default='0.70'),
             'R': LaunchConfiguration('roll', default='0.00'),
             'P': LaunchConfiguration('pitch', default='0.00'),
-            'Y': LaunchConfiguration('yaw', default='0.00')}
+            'Y': LaunchConfiguration('yaw', default='1.57')}
 
     # Define actions
     start_gazebo_server = ExecuteProcess(

@@ -18,10 +18,11 @@ from launch_ros.substitutions import FindPackageShare
 from nav2_common.launch import RewrittenYaml
 
 def generate_launch_description():
+    simulation_dir = FindPackageShare(package='simulation').find('simulation')
     beetle_gazebo_dir = FindPackageShare(package='beetle_gazebo').find('beetle_gazebo')
     beetle_nav_dir = FindPackageShare(package='beetle_navigation2').find('beetle_navigation2')
     bringup_dir = FindPackageShare(package='nav2_bringup').find('nav2_bringup')
-    default_world_file = os.path.join(beetle_gazebo_dir, 'worlds/empty.world')
+    default_world_file = os.path.join(simulation_dir, 'worlds/Field.world')
     default_rviz_config_file = os.path.join(beetle_nav_dir, 'rviz/default_view.rviz')
     default_nav_to_pose_bt_xml = os.path.join(beetle_nav_dir, 'behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml')
     default_nav_through_poses_bt_xml = os.path.join(beetle_nav_dir, 'behavior_trees/navigate_through_poses_w_replanning_and_recovery.xml')
