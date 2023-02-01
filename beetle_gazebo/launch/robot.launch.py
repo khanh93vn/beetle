@@ -12,9 +12,10 @@ from launch_ros.substitutions import FindPackageShare
 def generate_launch_description():
     beetle_desc_dir = FindPackageShare(package='beetle_description').find('beetle_description')
     beetle_gazebo_dir = FindPackageShare(package='beetle_gazebo').find('beetle_gazebo')
+    beetle_nav_dir = FindPackageShare(package='beetle_navigation2').find('beetle_navigation2')
     launch_dir = os.path.join(beetle_gazebo_dir, 'launch')
     default_controller_yaml_file = os.path.join(beetle_gazebo_dir, 'config/ackermann_controller.yaml')
-    default_rviz_config_file = os.path.join(beetle_gazebo_dir, 'rviz/default_view.rviz')
+    default_rviz_config_file = os.path.join(beetle_nav_dir, 'rviz/default_view.rviz')
 
     # Create launch configuration variables
     headless = LaunchConfiguration('headless')
