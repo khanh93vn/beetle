@@ -28,8 +28,7 @@ def generate_launch_description():
 
     robot_description = Command(['xacro ', os.path.join(beetle_desc_dir, 'urdf/beetle.urdf'),
                                 ' beetle_controller_yaml_file:=', params_file])
-    default_world_file = Command(['xacro ', os.path.join(beetle_gazebo_dir, 'worlds/empty.world'),
-                                ' api_key:=', api_key])
+    default_world_file = Command(['xacro ', os.path.join(beetle_gazebo_dir, 'worlds/empty.world')])
 
     # Define launch arguments
     headless = LaunchConfiguration('headless')
