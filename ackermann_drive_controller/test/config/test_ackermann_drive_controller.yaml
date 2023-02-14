@@ -1,4 +1,4 @@
-test_diff_drive_controller:
+test_ackermann_drive_controller:
   ros__parameters:
     left_wheel_names: ["left_wheels"]
     right_wheel_names: ["right_wheels"]
