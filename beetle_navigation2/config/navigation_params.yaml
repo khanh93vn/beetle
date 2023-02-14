@@ -225,12 +225,8 @@ recoveries_server:
       plugin: "nav2_recoveries/Wait"
     global_frame: odom
     robot_base_frame: base_link
-<<<<<<< HEAD:src/beetle_navigation2/config/navigation_params.yaml
     transform_timeout: 0.3
     transform_tolerance: 0.6
-=======
-    transform_tolerance: 0.4
->>>>>>> main:beetle_navigation2/config/navigation_params.yaml
     use_sim_time: true
     simulate_ahead_time: 2.0
     max_rotational_vel: 0.4
@@ -252,24 +248,6 @@ waypoint_follower:
       enabled: True
       waypoint_pause_duration: 200
 
-<<<<<<< HEAD:src/beetle_navigation2/config/navigation_params.yaml
-=======
-velocity_smoother:
-  ros__parameters:
-    use_sim_time: True
-    smoothing_frequency: 20.0
-    scale_velocities: False
-    feedback: "OPEN_LOOP"
-    max_velocity: [0.4, 0.0, 0.4]
-    min_velocity: [-0.4, 0.0, -0.4]
-    max_accel: [0.4, 0.0, 0.4]
-    max_decel: [-0.4, 0.0, -0.4]
-    # odom_topic: "odom"
-    odom_duration: 0.1
-    deadband_velocity: [0.0, 0.0, 0.0]
-    velocity_timeout: 1.0
-
->>>>>>> main:beetle_navigation2/config/navigation_params.yaml
 ekf_filter_node_odom:
   ros__parameters:
     use_sim_time: True

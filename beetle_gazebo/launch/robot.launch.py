@@ -15,6 +15,7 @@ def generate_launch_description():
     launch_dir = os.path.join(beetle_gazebo_dir, 'launch')
     default_controller_yaml_file = os.path.join(beetle_gazebo_dir, 'config/ackermann_controller.yaml')
     default_rviz_config_file = os.path.join(beetle_gazebo_dir, 'rviz/default_view.rviz')
+    ctu_map_path = os.path.join( beetle_gazebo_dir, 'worlds/ctu_college_of_tech_workshop.world')
 
     # Create launch configuration variables
     headless = LaunchConfiguration('headless')
@@ -28,25 +29,20 @@ def generate_launch_description():
 
     robot_description = Command(['xacro ', os.path.join(beetle_desc_dir, 'urdf/beetle.urdf'),
                                 ' beetle_controller_yaml_file:=', params_file])
-<<<<<<< HEAD:src/beetle_gazebo/launch/robot.launch.py
-    default_world_file = Command(['xacro ', os.path.join(beetle_gazebo_dir, 'worlds/ctu_college_of_tech_workshop.world'),
-=======
-    default_world_file = Command(['xacro ', os.path.join(beetle_gazebo_dir, 'worlds/empty.world'),
->>>>>>> main:beetle_gazebo/launch/robot.launch.py
-                                ' api_key:=', api_key])
+    # default_world_file = Command([ 'xacro ', ctu_map_path, ' api_key:=', api_key])
+    default_world_file = Command(['xacro ', os.path.join(beetle_gazebo_dir, 'worlds/empty.world')])
 
     # Define launch arguments
     headless = LaunchConfiguration('headless')
     declare_headless_cmd = DeclareLaunchArgument(
-        'headless',
-        default_value='false',
+        'headless', default_value='true',
         description='Whether to start gzclient')
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         'use_sim_time',
         default_value='true',
         description='Use simulation (Gazebo) clock if true')
     declare_use_rviz_cmd = DeclareLaunchArgument(
-        'use_rviz', default_value='true',
+        'use_rviz', default_value='false',
         description='Start with RViz if true')
     declare_params_file_cmd = DeclareLaunchArgument(
         name='params_file', default_value=default_controller_yaml_file,

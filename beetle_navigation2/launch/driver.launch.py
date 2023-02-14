@@ -27,7 +27,7 @@ def generate_launch_description():
 
     # Define launch arguments
     declare_use_rviz_cmd = DeclareLaunchArgument(
-        'use_rviz', default_value='true',
+        'use_rviz', default_value='false',
         description='Start with RViz if true')
     # declare_params_file_cmd = DeclareLaunchArgument(
     #     name='params_file', default_value=default_controller_yaml_file,

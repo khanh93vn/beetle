@@ -61,7 +61,7 @@ def generate_launch_description():
         'autostart', default_value='true',
         description='Automatically startup the nav2 stack')
     declare_use_ekf_cmd = DeclareLaunchArgument(
-        'use_ekf', default_value='False',
+        'use_ekf', default_value='false',
         description='Use Extended Kalman Filter to fuse sensors')
     declare_use_simulator_cmd = DeclareLaunchArgument(
         'use_simulator',
@@ -72,13 +72,13 @@ def generate_launch_description():
         default_value='true',
         description='Use simulation (Gazebo) clock if true')
     declare_use_rviz_cmd = DeclareLaunchArgument(
-        'use_rviz', default_value='true',
+        'use_rviz', default_value='false',
         description='Start with RViz if true')
     declare_use_composition_cmd = DeclareLaunchArgument(
-        'use_composition', default_value='False',
+        'use_composition', default_value='false',
         description='Use composed bringup if True')
     declare_use_respawn_cmd = DeclareLaunchArgument(
-        'use_respawn', default_value='False',
+        'use_respawn', default_value='false',
         description='Whether to respawn if a node crashes. Applied when composition is disabled.')
     declare_params_file_cmd = DeclareLaunchArgument(
         'params_file',

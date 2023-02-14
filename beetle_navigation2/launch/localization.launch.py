@@ -62,11 +62,11 @@ def generate_launch_description():
         description='Automatically startup the nav2 stack')
 
     declare_use_ekf_cmd = DeclareLaunchArgument(
-        'use_ekf', default_value='False',
+        'use_ekf', default_value='false',
         description='Use Extended Kalman Filter to fuse sensors')
 
     declare_use_composition_cmd = DeclareLaunchArgument(
-        'use_composition', default_value='False',
+        'use_composition', default_value='false',
         description='Use composed bringup if True')
 
     declare_container_name_cmd = DeclareLaunchArgument(
@@ -74,7 +74,7 @@ def generate_launch_description():
         description='the name of conatiner that nodes will load in if use composition')
 
     declare_use_respawn_cmd = DeclareLaunchArgument(
-        'use_respawn', default_value='False',
+        'use_respawn', default_value='false',
         description='Whether to respawn if a node crashes. Applied when composition is disabled.')
 
     declare_log_level_cmd = DeclareLaunchArgument(
