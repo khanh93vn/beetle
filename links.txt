@@ -1,2 +1,0 @@
-https://stackoverflow.com/questions/5200181/how-to-git-clone-a-repo-in-windows-from-other-pc-within-the-lan
-https://qengineering.eu/install-opencv-4.5-on-jetson-nano.html
