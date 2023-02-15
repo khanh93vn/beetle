@@ -35,14 +35,14 @@ def generate_launch_description():
     # Define launch arguments
     headless = LaunchConfiguration('headless')
     declare_headless_cmd = DeclareLaunchArgument(
-        'headless', default_value='true',
+        'headless', default_value='True',
         description='Whether to start gzclient')
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         'use_sim_time',
-        default_value='true',
+        default_value='True',
         description='Use simulation (Gazebo) clock if true')
     declare_use_rviz_cmd = DeclareLaunchArgument(
-        'use_rviz', default_value='false',
+        'use_rviz', default_value='False',
         description='Start with RViz if true')
     declare_params_file_cmd = DeclareLaunchArgument(
         name='params_file', default_value=default_controller_yaml_file,

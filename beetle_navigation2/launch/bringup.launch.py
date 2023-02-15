@@ -42,8 +42,8 @@ def generate_launch_description():
 
     # Rewrite params in files
     param_substitutions = {
-        'use_sim_time': PythonExpression([use_sim_time, " and " , use_simulator]),
-        'use_odom_tf': PythonExpression(["not ", use_ekf]),
+        # 'use_sim_time': PythonExpression([use_sim_time, " and " , use_simulator]),
+        # 'use_odom_tf': PythonExpression(["not ", use_ekf]),
         'yaml_filename': map_yaml_file,
         'default_nav_to_pose_bt_xml': default_nav_to_pose_bt_xml,
         'default_nav_through_poses_bt_xml': default_nav_through_poses_bt_xml}
@@ -58,27 +58,27 @@ def generate_launch_description():
     stdout_linebuf_envvar = SetEnvironmentVariable(
         'RCUTILS_LOGGING_BUFFERED_STREAM', '1')
     declare_autostart_cmd = DeclareLaunchArgument(
-        'autostart', default_value='true',
+        'autostart', default_value='True',
         description='Automatically startup the nav2 stack')
     declare_use_ekf_cmd = DeclareLaunchArgument(
-        'use_ekf', default_value='false',
+        'use_ekf', default_value='False',
         description='Use Extended Kalman Filter to fuse sensors')
     declare_use_simulator_cmd = DeclareLaunchArgument(
         'use_simulator',
-        default_value='true',
+        default_value='True',
         description='Whether to start the simulator')
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         'use_sim_time',
-        default_value='true',
+        default_value='True',
         description='Use simulation (Gazebo) clock if true')
     declare_use_rviz_cmd = DeclareLaunchArgument(
-        'use_rviz', default_value='false',
+        'use_rviz', default_value='False',
         description='Start with RViz if true')
     declare_use_composition_cmd = DeclareLaunchArgument(
-        'use_composition', default_value='false',
+        'use_composition', default_value='False',
         description='Use composed bringup if True')
     declare_use_respawn_cmd = DeclareLaunchArgument(
-        'use_respawn', default_value='false',
+        'use_respawn', default_value='False',
         description='Whether to respawn if a node crashes. Applied when composition is disabled.')
     declare_params_file_cmd = DeclareLaunchArgument(
         'params_file',
@@ -128,7 +128,8 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 os.path.join(beetle_nav_dir, 'launch', 'localization.launch.py')),
-            launch_arguments={'use_sim_time': PythonExpression([use_sim_time, " and ", use_simulator]),
+            # launch_arguments={'use_sim_time': PythonExpression([use_sim_time, " and ", use_simulator]),
+            launch_arguments={'use_sim_time': use_sim_time,
                               'autostart': autostart,
                               'use_ekf': use_ekf,
                               'use_composition': use_composition,
