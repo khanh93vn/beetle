@@ -42,8 +42,8 @@ def generate_launch_description():
 
     # Rewrite params in files
     param_substitutions = {
-        # 'use_sim_time': PythonExpression([use_sim_time, " and " , use_simulator]),
-        # 'use_odom_tf': PythonExpression(["not ", use_ekf]),
+        'use_sim_time': PythonExpression([use_sim_time, " and " , use_simulator]),
+        'use_odom_tf': PythonExpression(["not ", use_ekf]),
         'yaml_filename': map_yaml_file,
         'default_nav_to_pose_bt_xml': default_nav_to_pose_bt_xml,
         'default_nav_through_poses_bt_xml': default_nav_through_poses_bt_xml}
@@ -128,8 +128,7 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 os.path.join(beetle_nav_dir, 'launch', 'localization.launch.py')),
-            # launch_arguments={'use_sim_time': PythonExpression([use_sim_time, " and ", use_simulator]),
-            launch_arguments={'use_sim_time': use_sim_time,
+            launch_arguments={'use_sim_time': PythonExpression([use_sim_time, " and ", use_simulator]),
                               'autostart': autostart,
                               'use_ekf': use_ekf,
                               'use_composition': use_composition,
