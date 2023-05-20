@@ -21,8 +21,9 @@ ackermann_drive_base_controller:
     wheel_base: 1.190
     pivot_distance: 0.803
 
+    ## ***
     max_steering_speed: 1.5707963267948966
-    # max_steering_speed: 3.141592653589793
+    ## max_steering_angle: 1.054 rads
     max_steering_angle: 0.7853981633974483
 
     wheel_separation_multiplier: 1.0

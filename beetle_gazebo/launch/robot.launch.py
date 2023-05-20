@@ -27,7 +27,7 @@ def generate_launch_description():
     api_key = LaunchConfiguration('api_key')
     log_level = LaunchConfiguration('log_level')
 
-    robot_description = Command(['xacro ', os.path.join(beetle_desc_dir, 'urdf/beetle.urdf'),
+    robot_description = Command(['xacro ', os.path.join(beetle_desc_dir, 'urdf/beetle_sdv.urdf'),
                                 ' beetle_controller_yaml_file:=', params_file])
     default_world_file = Command(['xacro ', os.path.join(beetle_gazebo_dir, 'worlds/empty.world')])
 

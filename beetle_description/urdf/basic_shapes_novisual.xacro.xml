@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<shapes name="beetle" xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <!-- Define intertial property macros  -->
+  <xacro:macro name="box_inertia" params="m l w h x:=0">
+    <inertial>
+      <origin xyz="${x} 0 0"/>
+      <mass value="${m}"/>
+      <inertia ixx="${(m/12) * (w*w+h*h)}"   ixy="0.0" ixz="0.0"
+               iyy="${(m/12) * (h*h + l*l)}" iyz="0.0"
+               izz="${(m/12) * (l*l + w*w)}" />
+    </inertial>
+  </xacro:macro>
+
+  <xacro:macro name="cylinder_inertia" params="m r h z:=0">
+    <inertial>
+      <origin xyz="0 0 ${z}"/>
+      <mass value="${m}"/>
+      <inertia ixx="${(m/12) * (3*r*r + h*h)}" ixy = "0" ixz = "0"
+               iyy="${(m/12) * (3*r*r + h*h)}" iyz = "0"
+               izz="${(m/2) * (r*r)}"/>
+    </inertial>
+  </xacro:macro>
+
+  <xacro:macro name="sphere_inertia" params="m r">
+    <inertial>
+      <mass value="${m}"/>
+      <inertia ixx="${(2/5) * m * (r*r)}" ixy="0.0" ixz="0.0"
+               iyy="${(2/5) * m * (r*r)}" iyz="0.0"
+               izz="${(2/5) * m * (r*r)}"/>
+    </inertial>
+  </xacro:macro>
+
+  <xacro:macro name="cylinder_link"
+         params="prefix:=^ mass:=^ radius:=^ length:=^
+                 zoff:=^|0 collision:=^|1 *visual_material">
+    <link name="${prefix}_link">
+      <xacro:if value="${collision}">
+        <collision>
+          <origin xyz="0 0 ${zoff}"/>
+          <geometry>
+            <cylinder radius="${radius}" length="${length}"/>
+          </geometry>
+        </collision>
+      </xacro:if>
+
+      <xacro:cylinder_inertia m="${mass}" r="${radius}"
+                              h="${length}" z="${zoff}"/>
+    </link>
+  </xacro:macro>
+
+  <xacro:macro name="box_link"
+         params="prefix:=^ mass:=^ length:=^ width:=^ height
+                 xoff:=^|0 collision:=^|1 *visual_material">
+    <link name="${prefix}_link">
+
+      <xacro:if value="${collision}">
+        <collision>
+          <origin xyz="${xoff} 0 0"/>
+          <geometry>
+            <box size="${length} ${width} ${height}"/>
+          </geometry>
+        </collision>
+      </xacro:if>
+
+      <xacro:box_inertia m="${mass}" l="${length}" w="${width}"
+                         h="${height}" x="${xoff}"/>
+    </link>
+  </xacro:macro>
+</shapes>
