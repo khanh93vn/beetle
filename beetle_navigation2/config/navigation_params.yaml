@@ -154,9 +154,9 @@ global_costmap:
       footprint: "[ [-3.500, 1.250], [-3.500, -1.250], [1.500, -1.250], [1.500, 1.250] ]"
       rolling_window: true
       static_map: true
-      width: 500
-      height: 500
-      resolution: 0.1
+      width: 1920
+      height: 1080
+      resolution: 1.0
       track_unknown_space: False
       plugins: ["static_layer", "inflation_layer"]
       static_layer:
