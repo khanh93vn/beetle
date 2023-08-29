@@ -92,7 +92,8 @@ def generate_launch_description():
         description='Absolute path to rviz config file')
     declare_map_yaml_cmd = DeclareLaunchArgument(
         'map',
-        default_value=os.path.join(beetle_nav_dir, 'maps', 'Field.yaml'),
+        #default_value=os.path.join(beetle_nav_dir, 'maps', 'Field.yaml'),
+        #default_value=os.path.join(beetle_nav_dir, 'maps', 'andres_map.yaml'),
         description='Full path to map yaml file to load')
     declare_log_level_cmd = DeclareLaunchArgument(
         'log_level', default_value='info',

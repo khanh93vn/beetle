@@ -3,7 +3,7 @@ bt_navigator:
     use_sim_time: True
     global_frame: map
     robot_base_frame: base_link
-    odom_topic: /odom
+    odom_topic: /odom    #change this odom?, maybe here is declared
     bt_loop_duration: 10
     default_server_timeout: 20
     # 'default_nav_through_poses_bt_xml' and 'default_nav_to_pose_bt_xml' are use defaults:
@@ -63,7 +63,8 @@ bt_navigator_navigate_through_poses_rclcpp_node:
 bt_navigator_navigate_to_pose_rclcpp_node:
   ros__parameters:
     use_sim_time: True
-
+#If i want to avoid the controller server i can comment everything and also in the bringup launch file comment the behaviour trees files
+#In that sense I will loose the replanning and recovery behaviour, however is something that can be implemented later
 controller_server:
   ros__parameters:
     use_sim_time: True
@@ -72,16 +73,16 @@ controller_server:
     min_y_velocity_threshold: 0.5
     min_theta_velocity_threshold: 0.001
     failure_tolerance: 0.4
-    odom_topic: "odom"
+    odom_topic: "odom"  #This odom source needs to be mofied by one properly published by the car
     progress_checker_plugin: "progress_checker"
     goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
     controller_plugins: ["FollowPath"]
-
+#I can fed the desired velocity to the logitudinal controller to not have a constant velocity
     # Progress checker parameters
     progress_checker:
-      plugin: "nav2_controller::SimpleProgressChecker"
-      required_movement_radius: 0.5
-      movement_time_allowance: 10.0
+     plugin: "nav2_controller::SimpleProgressChecker"
+     required_movement_radius: 0.5
+     movement_time_allowance: 10.0
     general_goal_checker:
       stateful: False
       plugin: "nav2_controller::SimpleGoalChecker"
@@ -131,7 +132,7 @@ local_costmap:
         observation_sources: pointcloud
         combination_method: 1
         pointcloud:  # no frame set, uses frame from message
-          topic: /camera/points
+          topic: /camera/points #use laser scan /scan
           max_obstacle_height: 2.0
           min_obstacle_height: 0.1
           obstacle_max_range: 5.0
@@ -176,8 +177,11 @@ map_server:
     use_sim_time: True
     # Overridden in launch by the "map" launch configuration or provided default value.
     # To use in yaml, remove the default "map" value in the tb3_simulation_launch.py file & provide full path to map below.
-    yaml_filename: "/home/khanh/git-projects/ros2-workspace/install/beetle_navigation2/share/beetle_navigation2/maps/map.yaml"
+    yaml_filename: "/home/khanh/git-projects/ros2-workspace/install/beetle_navigation2/share/beetle_navigation2/maps/map.yaml" 
+    #yaml_filename: "/catkin_ws/src/beetle/beetle_navigation2/maps/andres_map.yaml" 
+    #yaml_filename: "/home/khanh/git-projects/ros2-workspace/install/beetle_navigation2/share/beetle_navigation2/maps/andres_map.yaml" 
 
+#modifications in params, bringuo and nav.launch
 map_saver:
   ros__parameters:
     use_sim_time: True
@@ -222,6 +226,10 @@ planner_server:
 
 smoother_server:
   ros__parameters:
+    #costmap_topic: global_costmap/costmap_raw
+    #footprint_topic: global_costmap/published_footprint
+    #robot_base_frame: base_link
+    #transform_timeout: 0.1
     use_sim_time: True
     smoother_plugins: ["simple_smoother"]
     simple_smoother:
@@ -276,7 +284,7 @@ velocity_smoother:
     min_velocity: [-0.4, 0.0, -0.4]
     max_accel: [0.4, 0.0, 0.4]
     max_decel: [-0.4, 0.0, -0.4]
-    # odom_topic: "odom"
+    # odom_topic: "odom" #double check this
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]
     velocity_timeout: 1.0
@@ -354,7 +362,7 @@ ekf_filter_node_odom:
                                   0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,     0.0,    1.0,  0.0,
                                   0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,     0.0,    0.0,    1.0]
 
-ekf_filter_node_map:
+ekf_filter_node_map: #here is where i have to modify it, would it require the joint_state publisher?, it was originally simulated with no real imu source
   ros__parameters:
     use_sim_time: True
     frequency: 30.0
@@ -451,68 +459,68 @@ navsat_transform:
     use_odometry_yaw: false
     wait_for_datum: false
 
-controller_manager:
-  ros__parameters:
-    update_rate: 60  # Hz
-    use_sim_time: true
+#controller_manager:
+#  ros__parameters:
+#    update_rate: 60  # Hz
+#    use_sim_time: true
 
-    joint_state_broadcaster:
-      type: joint_state_broadcaster/JointStateBroadcaster
+#    joint_state_broadcaster:
+#      type: joint_state_broadcaster/JointStateBroadcaster
 
-    ackermann_drive_base_controller:
-      type: ackermann_drive_controller/AckermannDriveController
+#    ackermann_drive_base_controller:
+#      type: ackermann_drive_controller/AckermannDriveController
 
-ackermann_drive_base_controller:
-  ros__parameters:
-    left_wheel_name: "rear_left_wheel_joint"
-    right_wheel_name: "rear_right_wheel_joint"
-    left_steering_name: "left_steering_joint"
-    right_steering_name: "right_steering_joint"
+#ackermann_drive_base_controller:
+#  ros__parameters:
+#    left_wheel_name: "rear_left_wheel_joint"
+#    right_wheel_name: "rear_right_wheel_joint"
+#    left_steering_name: "left_steering_joint"
+#    right_steering_name: "right_steering_joint"
 
-    wheel_separation: 1.066
-    wheel_radius: 0.250
-    wheel_base: 1.190
-    pivot_distance: 0.803
+#    wheel_separation: 1.066
+#    wheel_radius: 0.250
+#    wheel_base: 1.190
+#    pivot_distance: 0.803
 
-    max_steering_speed: 1.5707963267948966
-    max_steering_angle: 0.7853981633974483
+#    max_steering_speed: 1.5707963267948966
+#    max_steering_angle: 0.7853981633974483
 
-    wheel_separation_multiplier: 1.0
-    left_wheel_radius_multiplier: 1.0
-    right_wheel_radius_multiplier: 1.0
+#    wheel_separation_multiplier: 1.0
+#    left_wheel_radius_multiplier: 1.0
+#    right_wheel_radius_multiplier: 1.0
 
-    publish_rate: 50.0
-    odom_frame_id: odom
-    base_frame_id: base_link
-    pose_covariance_diagonal : [0.001, 0.001, 0.0, 0.0, 0.0, 0.01]
-    twist_covariance_diagonal: [0.001, 0.0, 0.0, 0.0, 0.0, 0.01]
+#    publish_rate: 50.0
+#    odom_frame_id: odom
+#    base_frame_id: base_link
+#    pose_covariance_diagonal : [0.001, 0.001, 0.0, 0.0, 0.0, 0.01]
+#    twist_covariance_diagonal: [0.001, 0.0, 0.0, 0.0, 0.0, 0.01]
 
-    open_loop: false
-    enable_odom_tf: true
+#    open_loop: false
+#    enable_odom_tf: true
 
-    cmd_vel_timeout: 0.5
+#    cmd_vel_timeout: 0.5
     #publish_limited_velocity: true
-    use_stamped_vel: false
+#    use_stamped_vel: false
     #velocity_rolling_window_size: 10
 
     # Velocity and acceleration limits
     # Whenever a min_* is unspecified, default to -max_*
-    linear.x.has_velocity_limits: true
-    linear.x.has_acceleration_limits: true
-    linear.x.has_jerk_limits: false
+#    linear.x.has_velocity_limits: true
+#    linear.x.has_acceleration_limits: true
+#    linear.x.has_jerk_limits: false
     # Physicial Car Max Velocity: 2.7
-    linear.x.max_velocity: 0.4
-    linear.x.min_velocity: 0.0
-    linear.x.max_acceleration: 0.4
-    linear.x.max_jerk: 0.0
-    linear.x.min_jerk: 0.0
+#    linear.x.max_velocity: 0.4
+#    linear.x.min_velocity: 0.0
+#    linear.x.max_acceleration: 0.4
+#    linear.x.max_jerk: 0.0
+#    linear.x.min_jerk: 0.0
 
-    angular.z.has_velocity_limits: true
-    angular.z.has_acceleration_limits: true
-    angular.z.has_jerk_limits: false
-    angular.z.max_velocity: 0.4
-    angular.z.min_velocity: -0.4
-    angular.z.max_acceleration: 0.4
-    angular.z.min_acceleration: -0.4
-    angular.z.max_jerk: 0.0
-    angular.z.min_jerk: 0.0
+#    angular.z.has_velocity_limits: true
+#    angular.z.has_acceleration_limits: true
+#    angular.z.has_jerk_limits: false
+#    angular.z.max_velocity: 0.4
+#    angular.z.min_velocity: -0.4
+#    angular.z.max_acceleration: 0.4
+#    angular.z.min_acceleration: -0.4
+#    angular.z.max_jerk: 0.0
+#    angular.z.min_jerk: 0.0

@@ -10,11 +10,13 @@ from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description():
-    beetle_desc_dir = FindPackageShare(package='beetle_description').find('beetle_description')
+    #beetle_desc_dir = FindPackageShare(package='beetle_description').find('beetle_description')
+    beetle_desc_dir = FindPackageShare(package='sdv_description').find('sdv_description')
+
     beetle_gazebo_dir = FindPackageShare(package='beetle_gazebo').find('beetle_gazebo')
     beetle_nav_dir = FindPackageShare(package='beetle_navigation2').find('beetle_navigation2')
     launch_dir = os.path.join(beetle_gazebo_dir, 'launch')
-    default_controller_yaml_file = os.path.join(beetle_gazebo_dir, 'config/ackermann_controller.yaml')
+    #default_controller_yaml_file = os.path.join(beetle_gazebo_dir, 'config/ackermann_controller.yaml')
     default_rviz_config_file = os.path.join(beetle_nav_dir, 'rviz/default_view.rviz')
 
     # Create launch configuration variables
@@ -27,8 +29,14 @@ def generate_launch_description():
     api_key = LaunchConfiguration('api_key')
     log_level = LaunchConfiguration('log_level')
 
-    robot_description = Command(['xacro ', os.path.join(beetle_desc_dir, 'urdf/beetle_sdv.urdf'),
-                                ' beetle_controller_yaml_file:=', params_file])
+    #robot_description = Command(['xacro ', os.path.join(beetle_desc_dir, 'urdf/beetle_sdv.urdf'),
+    #                           ' beetle_controller_yaml_file:=', params_file])
+    #robot_description = os.path.join(beetle_desc_dir, 'urdf/sdv.urdf')
+    #with open(robot_description, 'r') as infp:
+    #    robot_desc = infp.read()
+    robot_description = Command(['xacro ', os.path.join(beetle_desc_dir, 'urdf/sdv.urdf'),
+                               ' beetle_controller_yaml_file:=', params_file])
+    
     default_world_file = Command(['xacro ', os.path.join(beetle_gazebo_dir, 'worlds/empty.world')])
 
     # Define launch arguments
@@ -44,9 +52,9 @@ def generate_launch_description():
     declare_use_rviz_cmd = DeclareLaunchArgument(
         'use_rviz', default_value='true',
         description='Start with RViz if true')
-    declare_params_file_cmd = DeclareLaunchArgument(
-        name='params_file', default_value=default_controller_yaml_file,
-        description='Absolute path to controller yaml config file')
+    #declare_params_file_cmd = DeclareLaunchArgument(
+    #    name='params_file', default_value=default_controller_yaml_file,
+    #    description='Absolute path to controller yaml config file')
     declare_world_file_cmd = DeclareLaunchArgument(
         name='world_file', default_value=default_world_file,
         description='Absolute path to world file to launch with Gazebo')
@@ -60,11 +68,11 @@ def generate_launch_description():
         'log_level', default_value='info',
         description='log level')
     pose = {'x': LaunchConfiguration('x_pose', default='0.00'),
-            'y': LaunchConfiguration('y_pose', default='0.00'),
-            'z': LaunchConfiguration('z_pose', default='0.70'),
+            'y': LaunchConfiguration('y_pose', default='3.14159'),
+            'z': LaunchConfiguration('z_pose', default='-1.5704'),
             'R': LaunchConfiguration('roll', default='0.00'),
             'P': LaunchConfiguration('pitch', default='0.00'),
-            'Y': LaunchConfiguration('yaw', default='1.57')}
+            'Y': LaunchConfiguration('yaw', default='-1.9')}
 
     # Define actions
     start_gazebo_server = ExecuteProcess(
@@ -78,8 +86,8 @@ def generate_launch_description():
     start_gazebo_spawner = Node(
         package='gazebo_ros',
         executable='spawn_entity.py',
-        arguments=['-entity', 'beetle',
-                   '-topic', 'robot_description',
+        arguments=['-entity', 'beetle', #beetle originally called
+                   '-topic', 'robot_description', 
                    '-x', pose['x'], '-y', pose['y'], '-z', pose['z'],
                    '-R', pose['R'], '-P', pose['P'], '-Y', pose['Y']],
         output='screen')
@@ -88,12 +96,23 @@ def generate_launch_description():
         executable='joint_state_publisher',
         name='joint_state_publisher',
         parameters=[{'use_sim_time': use_sim_time}])
+    #start_robot_localization_cmd = Node(
+    #package='robot_localization',
+    #executable='ekf_node',
+    #name='ekf_filter_node',
+    #output='screen',
+    #parameters=[robot_desc, 
+    #{'use_sim_time': use_sim_time}])
+    #This change i made it to test ekf correct launch
     start_robot_state_publisher = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
         output='screen',
+        #parameters=[{'use_sim_time': use_sim_time, 'robot_description': robot_desc}],
+        #   arguments=[robot_description])
         parameters=[{'use_sim_time': use_sim_time,
-                     'robot_description': robot_description}])
+                    'robot_description': robot_description}])
+    
     start_rviz = Node(
         condition=IfCondition(use_rviz),
         package='rviz2',
@@ -102,43 +121,43 @@ def generate_launch_description():
         output='screen',
         arguments=['-d', rviz_config_file],
         parameters=[{'use_sim_time': use_sim_time}])
-    load_joint_state_controller = ExecuteProcess(
-        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
-             'joint_state_broadcaster'],
-        output='screen')
-    load_ackermann_drive_base_controller = ExecuteProcess(
-        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
-             'ackermann_drive_base_controller'],
-        output='screen')
+    #load_joint_state_controller = ExecuteProcess(
+    #    cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+    #         'joint_state_broadcaster'],
+    #    output='screen')
+    #load_ackermann_drive_base_controller = ExecuteProcess(
+    #    cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+    #         'ackermann_drive_base_controller'],
+    #    output='screen')
 
     # Declare event handlers
 
-    load_ackermann_drive_base_ctrl_event = RegisterEventHandler(
-    event_handler=OnProcessExit(
-        target_action=start_gazebo_spawner,
-        on_exit=[load_ackermann_drive_base_controller]))
-    load_joint_state_ctrl_event = RegisterEventHandler(
-        event_handler=OnProcessExit(
-            target_action=load_joint_state_controller,
-            on_exit=[load_joint_state_controller]))
+    #load_ackermann_drive_base_ctrl_event = RegisterEventHandler(
+    #event_handler=OnProcessExit(
+    #    target_action=start_gazebo_spawner,
+    #    on_exit=[load_ackermann_drive_base_controller]))
+    #load_joint_state_ctrl_event = RegisterEventHandler(
+    #    event_handler=OnProcessExit(
+    #        target_action=load_joint_state_controller,
+    #        on_exit=[load_joint_state_controller]))
 
     # Create launch description
     ld = launch.LaunchDescription()
-
+#Maybe the joint state is doing something to feedback
     # Declare launch options
     ld.add_action(declare_headless_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_use_rviz_cmd)
-    ld.add_action(declare_params_file_cmd)
+    #ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_world_file_cmd)
     ld.add_action(declare_rviz_config_file_cmd)
     ld.add_action(declare_api_key_cmd)
     ld.add_action(declare_log_level_cmd)
 
     # Register event handlers
-    ld.add_action(load_ackermann_drive_base_ctrl_event)
-    # ld.add_action(load_joint_state_ctrl_event)
-
+    #ld.add_action(load_ackermann_drive_base_ctrl_event)
+    #ld.add_action(load_joint_state_ctrl_event)
+    #ld.add_action(start_robot_localization_cmd)
     # Add actions
     ld.add_action(start_gazebo_server)
     ld.add_action(start_gazebo_client)

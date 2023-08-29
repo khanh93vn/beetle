@@ -10,8 +10,10 @@ from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description():
-    beetle_desc_dir = FindPackageShare(package='beetle_description').find('beetle_description')
-    robot_description = xacro.process_file(os.path.join(beetle_desc_dir, 'urdf/beetle.urdf')).toxml()
+    #beetle_desc_dir = FindPackageShare(package='beetle_description').find('beetle_description')
+    beetle_desc_dir = FindPackageShare(package='sdv_description').find('sdv_description')
+
+    robot_description = xacro.process_file(os.path.join(beetle_desc_dir, 'urdf/sdv.urdf')).toxml()
     default_rviz_config_file = os.path.join(beetle_desc_dir, 'rviz/default_view.rviz')
 
     # Create launch configuration variables
