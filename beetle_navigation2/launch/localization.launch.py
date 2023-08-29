@@ -132,42 +132,45 @@ def generate_launch_description():
 
     #print(f"Value of use_ekf is {use_ekf}")
 
-    start_ekf_local = Node(
-        condition=IfCondition(use_ekf),
-        package='robot_localization',
-        executable='ekf_node',
-        name='ekf_filter_node_odom',
-        output='screen',
-        parameters=[configured_params],
-        arguments=['--ros-args', '--log-level', log_level],
-        remappings=[('odometry/filtered', 'odometry/local')])
-    start_ekf_global = Node(
-        condition=IfCondition(use_ekf),
-        package='robot_localization',
-        executable='ekf_node',
-        name='ekf_filter_node_map',
-        output='screen',
-        parameters=[configured_params],
-        arguments=['--ros-args', '--log-level', log_level],
-        remappings=[('odometry/filtered', 'odometry/global')])
-    start_navsat = Node(
-        condition=IfCondition(use_ekf),
-        package='robot_localization',
-        executable='navsat_transform_node',
-        name='navsat_transform',
-        output='screen',
-        parameters=[configured_params],
-        arguments=['--ros-args', '--log-level', log_level],
-        remappings=[('imu/data', 'imu'),
-                    ('gps/fix', 'gps'),
-                    ('gps/filtered', 'gps/filtered'),
-                    ('odometry/gps', 'odometry/gps'),
-                    ('odometry/filtered', 'odometry/global')])
+    start_ekf = Node(
+         condition=IfCondition(use_ekf),
+         package='robot_localization',
+         executable='ekf_node',
+         name='ekf_filter_node_odom',
+         output='screen',
+         parameters=[configured_params],
+         #arguments=['--ros-args', '--log-level', log_level],
+         #remappings=[('odometry/filtered', 'odometry/local'),
+    #     #            ('odometry/filtered', 'odometry/global')])
+     )
+    # start_ekf_global = Node(
+    #     condition=IfCondition(use_ekf),
+    #     package='robot_localization',
+    #     executable='ekf_node',
+    #     name='ekf_filter_node_map',
+    #     output='screen',
+    #     parameters=[configured_params],
+    #     arguments=['--ros-args', '--log-level', log_level],
+    #     remappings=[('odometry/filtered', 'odometry/global')])
+    # start_navsat = Node(
+    #     condition=IfCondition(use_ekf),
+    #     package='robot_localization',
+    #     executable='navsat_transform_node',
+    #     name='navsat_transform',
+    #     output='screen',
+    #     parameters=[configured_params],
+    #     arguments=['--ros-args', '--log-level', log_level],
+    #     remappings=[('imu/data', 'imu'),
+    #                 ('gps/fix', 'gps')
+    #                 #('gps/filtered', 'gps/filtered'),
+    #                 #('odometry/gps', 'odometry/gps'),
+    #                 #('odometry/filtered', 'odometry/global')
+    #                 ])
     
     
 
     start_mock_transformation = Node(
-        condition=UnlessCondition(use_ekf),
+        #condition=UnlessCondition(use_ekf),
         package='map_odom_static_broadcaster',
         executable='map_odom_static_broadcaster',
         name='map_odom_static_broadcaster',
@@ -193,9 +196,9 @@ def generate_launch_description():
     # Add the actions to launch all of the localiztion nodes
     ld.add_action(load_nodes)
     ld.add_action(load_composable_nodes)
-    ld.add_action(start_ekf_local)
-    ld.add_action(start_ekf_global)
-    ld.add_action(start_navsat)
+    ld.add_action(start_ekf)
+    #ld.add_action(start_ekf_global)
+    #ld.add_action(start_navsat)
     ld.add_action(start_mock_transformation)
 
     return ld
