@@ -13,6 +13,9 @@ public:
   {
     tf_static_broadcaster_ =
       std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
+    this->declare_parameter("init_pose.x", -32.0);
+    this->declare_parameter("init_pose.y", 140.0);
+    this->declare_parameter("init_pose.psi", M_PI/2);
 
     // Publish static transforms once at startup
     this->make_transforms();
@@ -27,12 +30,15 @@ private:
     t.header.stamp = this->get_clock()->now();
     t.header.frame_id = "map";
     t.child_frame_id = "odom";
+    double init_x = this->get_parameter("init_pose.x").as_double();
+    double init_y = this->get_parameter("init_pose.y").as_double();
+    double init_yaw = this->get_parameter("init_pose.psi").as_double();
 
-    t.transform.translation.x = 0;
-    t.transform.translation.y = 0;
+    t.transform.translation.x = init_x;
+    t.transform.translation.y = init_y;
     t.transform.translation.z = 0;
     tf2::Quaternion q;
-    q.setRPY(0, 0, 0);
+    q.setRPY(0, 0, init_yaw); 
     t.transform.rotation.x = q.x();
     t.transform.rotation.y = q.y();
     t.transform.rotation.z = q.z();
@@ -42,6 +48,7 @@ private:
   }
 
   std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_broadcaster_;
+  double init_x_, init_y_, init_yaw_;
 };
 
 int main(int argc, char * argv[])

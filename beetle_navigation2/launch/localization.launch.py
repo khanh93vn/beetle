@@ -123,6 +123,15 @@ def generate_launch_description():
                              'node_names': lifecycle_nodes}]),
         ],
     )
+
+    #start_ekf_local = Node(
+    #package='robot_localization',
+    #executable='ekf_node',
+    #name='ekf_filter_node_odom',
+    #output='screen')
+
+    #print(f"Value of use_ekf is {use_ekf}")
+
     start_ekf_local = Node(
         condition=IfCondition(use_ekf),
         package='robot_localization',
@@ -154,6 +163,9 @@ def generate_launch_description():
                     ('gps/filtered', 'gps/filtered'),
                     ('odometry/gps', 'odometry/gps'),
                     ('odometry/filtered', 'odometry/global')])
+    
+    
+
     start_mock_transformation = Node(
         condition=UnlessCondition(use_ekf),
         package='map_odom_static_broadcaster',

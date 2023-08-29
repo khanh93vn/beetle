@@ -1,0 +1,82 @@
+<?xml version="1.0"?>
+<robot name="sdv">
+  <link name="base_link">
+    <visual>
+      <origin rpy="0 3.14159 -1.5704" xyz="0 0 -1.9"/>
+      <geometry>
+        <mesh filename="package://sdv_description/meshes/sdv.stl" scale="1.0 1.0 1.0"/>
+      </geometry>
+      <material name="Cyan">
+        <color rgba="0.95 0.95 0.95 1.0"/>
+      </material>
+    </visual>
+  </link>
+
+</robot>
+  <!-- <xacro:include filename="$(find mastering_ros_robot_description_pkg)/urdf/sensors/xtion_pro_live.urdf.xacro"/> -->
+  <xacro:include filename="basic_shapes_novisual.xacro.xml"/>
+
+  <!-- Define robot's inertial constants -->
+  <xacro:property name="chassis_mass" value="40.0"/>
+  <xacro:property name="wheel_mass" value="3.0"/>
+  <xacro:property name="wheel_rim_mass" value="5.0"/>
+  <xacro:property name="steering_link_mass" value="0.8"/>
+  <xacro:property name="bearing_friction_coeff" value="0.0015"/>
+  <xacro:property name="wheel_joint_damping" value="10"/>
+  <xacro:property name="steering_joint_damping" value="20"/>
+  <xacro:property name="gravity" value="9.81"/>
+
+  <!-- Define robot's distance constants -->
+  <xacro:property name="tube_width" value="0.040"/>
+
+  <xacro:property name="rear_xoff" value="-0.303"/>
+
+  <xacro:property name="chassis_length_seg_1" value="1.240"/>
+  <xacro:property name="chassis_length_seg_2" value="0.510"/>
+  <xacro:property name="chassis_length_seg_3" value="0.240"/>
+
+  <xacro:property name="chassis_width_seg_1" value="0.780"/>
+  <xacro:property name="chassis_width_seg_2" value="0.380"/>
+
+  <xacro:property name="chassis_total_length"
+                  value="${chassis_length_seg_1+chassis_length_seg_2+chassis_length_seg_3}"/>
+  <xacro:property name="chassis_xoff" value="${rear_xoff+chassis_total_length/2}"/>
+
+  <xacro:property name="suspension_link_radius" value="0.010"/>
+  <xacro:property name="suspension_zoff" value="${- tube_width/2 - 0.030}"/>
+  <xacro:property name="suspension_xoff" value="${0.916}"/>
+  <xacro:property name="rear_suspension_height" value="0.315"/>
+  <xacro:property name="rear_suspension_height_1" value="0.195"/>
+  <xacro:property name="front_suspension_height" value="0.205"/>
+
+  <xacro:property name="rear_axle_radius" value="${0.028}"/>
+  <xacro:property name="rear_axle_zoff"
+                  value="${suspension_zoff - rear_suspension_height + 0.060}"/>
+  <xacro:property name="front_axle_radius" value="${0.0245}"/>
+  <xacro:property name="front_axle_zoff"
+                  value="${suspension_zoff - front_suspension_height - 0.050}"/>
+
+  <xacro:property name="wheel_track" value="1.066"/>
+  <xacro:property name="wheel_base" value="1.190"/>
+  <xacro:property name="pivot_distance" value="0.803"/>
+
+  <xacro:property name="wheel_radius" value="0.250"/>
+  <xacro:property name="wheel_width" value="0.110"/>
+
+  <xacro:property name="wheel_rim_radius" value="0.143"/>
+  <xacro:property name="wheel_rim_visual_width" value="0.01"/>
+
+  <xacro:property name="steering_link_radius" value="0.020"/>
+  <xacro:property name="steering_link_length" value="0.082"/>
+
+  <xacro:property name="steering_arm_thickness" value="0.05"/>
+  <xacro:property name="steering_arm_width" value="0.040"/>
+  <xacro:property name="steering_arm_length" value="0.1389"/>
+  <xacro:property name="steering_arm_angle" value="2.7816883085360424"/>
+  <!-- 159.379 degrees -->
+
+  <xacro:property name="control_box_width" value="0.300"/>
+  <xacro:property name="control_box_height" value="0.100"/>
+  <xacro:property name="control_box_thickness" value="0.0005"/>
+  <xacro:property name="control_box_xoff" value="0.301"/>
+

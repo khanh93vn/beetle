@@ -13,7 +13,9 @@ DEVICE = "/dev/serial/by-id/usb-1a86_USB_Single_Serial_54E1003696-if00"
 BAUDRATE = 921600
 
 def generate_launch_description():
-    beetle_desc_dir = FindPackageShare(package='beetle_description').find('beetle_description')
+    #beetle_desc_dir = FindPackageShare(package='beetle_description').find('beetle_description')
+    beetle_desc_dir = FindPackageShare(package='sdv_description').find('sdv_description')
+
     beetle_nav_dir = FindPackageShare(package='beetle_navigation2').find('beetle_navigation2')
     default_rviz_config_file = os.path.join(beetle_nav_dir, 'rviz/default_view.rviz')
 
@@ -22,9 +24,11 @@ def generate_launch_description():
     params_file = LaunchConfiguration('params_file')
     rviz_config_file = LaunchConfiguration('rviz_config_file')
 
-    robot_description = Command(['xacro ', os.path.join(beetle_desc_dir, 'urdf/beetle.urdf'),
-                                ' beetle_controller_yaml_file:=', params_file])
-
+    #robot_description = Command(['xacro ', os.path.join(beetle_desc_dir, 'urdf/beetle.urdf'),
+    #                            ' beetle_controller_yaml_file:=', params_file])
+    robot_description = Command(['xacro ', os.path.join(beetle_desc_dir, 'urdf/sdv.urdf'),
+                               ' beetle_controller_yaml_file:=', params_file])
+    
     # Define launch arguments
     declare_use_rviz_cmd = DeclareLaunchArgument(
         'use_rviz', default_value='true',
