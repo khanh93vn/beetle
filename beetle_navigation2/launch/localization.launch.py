@@ -94,6 +94,16 @@ def generate_launch_description():
                 parameters=[configured_params],
                 arguments=['--ros-args', '--log-level', log_level],),
             Node(
+                package='nav2_amcl',
+                executable='amcl',
+                name='amcl',
+                output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
+                parameters=[configured_params],
+                arguments=['--ros-args', '--log-level', log_level],
+            ),
+            Node(
                 package='nav2_lifecycle_manager',
                 executable='lifecycle_manager',
                 name='lifecycle_manager_localization',
@@ -113,6 +123,11 @@ def generate_launch_description():
                 package='nav2_map_server',
                 plugin='nav2_map_server::MapServer',
                 name='map_server',
+                parameters=[configured_params]),
+            ComposableNode(
+                package='nav2_amcl',
+                plugin='nav2_amcl::AmclNode',
+                name='amcl',
                 parameters=[configured_params]),
             ComposableNode(
                 package='nav2_lifecycle_manager',
