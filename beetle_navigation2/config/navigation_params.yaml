@@ -354,41 +354,41 @@ ekf_filter_node_odom:
     base_link_frame: base_link
     world_frame: odom
     
-    odom0: odom
-    odom0_config: [false, false, false,
-                   false, false, false,
-                   true,  true,  false,
-                   false, false, false,
-                   false, false, false]
-    odom0_queue_size: 10
-    odom0_nodelay: true
-    odom0_differential: false
-    odom0_relative: false
-
-    # imu0: vectornav/imu
-    # imu0_config: [false, false, false,
+    # odom0: odom
+    # odom0_config: [false, false, false,
     #                false, false, false,
     #                true,  true,  false,
-    #                false, false, true,
-    #                true, true, false]
-    # imu0_queue_size: 10
-    # imu0_nodelay: true
-    # imu0_differential: false
-    # imu0_relative: false
-    # imu0_remove_gravitational_acceleration: true
+    #                false, false, false,
+    #                false, false, false]
+    # odom0_queue_size: 10
+    # odom0_nodelay: true
+    # odom0_differential: false
+    # odom0_relative: false
+
+    imu0: vectornav/imu
+    imu0_config: [false, false, false,
+                   false, false, true,
+                   true,  false,  false,
+                   false, false, false,
+                   true, false, false]
+    imu0_queue_size: 10
+    imu0_nodelay: true
+    imu0_differential: true
+    imu0_relative: false
+    imu0_remove_gravitational_acceleration: true
 
 
-    imu1: sbg/imu/data #change
-    imu1_config: [false, false, false,
-                  false,  false,  true,
-                  true, true, false,
-                  false,  false,  true,
-                  true,  true,  false]
-    imu1_nodelay: false
-    imu1_differential: false
-    imu1_relative: false
-    imu1_queue_size: 10
-    imu1_remove_gravitational_acceleration: true
+    # imu1: sbg/imu/data #change
+    # imu1_config: [false, false, false,
+    #               false,  false,  true,
+    #               true, false, false,
+    #               false,  false,  false,
+    #               true,  false,  false]
+    # imu1_nodelay: false
+    # imu1_differential: false
+    # imu1_relative: false
+    # imu1_queue_size: 10
+    # imu1_remove_gravitational_acceleration: true
 
     use_control: false
 
@@ -464,7 +464,7 @@ ekf_filter_node_map: #here is where i have to modify it, would it require the jo
     odom1_differential: false
     odom1_relative: false
 
-    odom2: /sdv_localization/sbg/odom
+    odom2: sdv_localization/sbg/odom
     odom2_config: [true,  true,  false,
                    false, false, false,
                    false, false, false,
