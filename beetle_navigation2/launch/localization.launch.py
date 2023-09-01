@@ -211,8 +211,8 @@ def generate_launch_description():
     ld.add_action(load_nodes)
     ld.add_action(load_composable_nodes)
     ld.add_action(start_ekf_local)
-    ld.add_action(start_ekf_global)
-    ld.add_action(start_navsat)
+    #ld.add_action(start_ekf_global)
+    #ld.add_action(start_navsat)
     ld.add_action(start_mock_transformation)
 
     return ld
