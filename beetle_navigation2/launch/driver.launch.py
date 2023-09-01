@@ -41,13 +41,13 @@ def generate_launch_description():
         description='Absolute path to rviz config file')
 
     # Define actions
-    start_micro_ros_agent = Node(
-        package='micro_ros_agent',
-        executable='micro_ros_agent',
-        name='micro_ros_agent',
-        arguments=[
-            "serial", "--dev", DEVICE,
-            "--baudrate", str(BAUDRATE), "-v6"])
+    # start_micro_ros_agent = Node(
+    #     package='micro_ros_agent',
+    #     executable='micro_ros_agent',
+    #     name='micro_ros_agent',
+    #     arguments=[
+    #         "serial", "--dev", DEVICE,
+    #         "--baudrate", str(BAUDRATE), "-v6"])
     start_msg_forwarder = Node(
         package='beetle_msg_forwarder',
         executable='beetle_msg_forwarder',
@@ -85,7 +85,7 @@ def generate_launch_description():
     # Register event handlers
 
     # Add actions
-    ld.add_action(start_micro_ros_agent)
+    #ld.add_action(start_micro_ros_agent)
     ld.add_action(start_msg_forwarder)
     ld.add_action(start_joint_state_publisher)
     ld.add_action(start_robot_state_publisher)
