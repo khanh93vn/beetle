@@ -216,19 +216,19 @@ global_costmap:
         cost_scaling_factor: 20.0
       always_send_full_costmap: True
 
-map_server:
-  ros__parameters:
-    use_sim_time: True
-    # Overridden in launch by the "map" launch configuration or provided default value.
-    # To use in yaml, remove the default "map" value in the tb3_simulation_launch.py file & provide full path to map below.
-    #yaml_filename: "/home/khanh/git-projects/ros2-workspace/install/beetle_navigation2/share/beetle_navigation2/maps/map.yaml" 
-    #yaml_filename: "/catkin_ws/src/beetle/beetle_navigation2/maps/andres_map.yaml" 
-    yaml_filename: "sdv_localization/sdv_localization/maps/carreta_map.yaml" 
+# map_server:
+#   ros__parameters:
+#     use_sim_time: True
+#     # Overridden in launch by the "map" launch configuration or provided default value.
+#     # To use in yaml, remove the default "map" value in the tb3_simulation_launch.py file & provide full path to map below.
+#     #yaml_filename: "/home/khanh/git-projects/ros2-workspace/install/beetle_navigation2/share/beetle_navigation2/maps/map.yaml" 
+#     #yaml_filename: "/catkin_ws/src/beetle/beetle_navigation2/maps/andres_map.yaml" 
+#     yaml_filename: "sdv_localization/sdv_localization/maps/carreta_map.yaml" 
 
-map_server:
-  ros__parameters:
-    use_sim_time: True
-    yaml_filename: ""
+# map_server:
+#   ros__parameters:
+#     use_sim_time: True
+#     yaml_filename: "sdv_localization/sdv_localization/maps/raw_map.yaml"
 
 
 #modifications in params, bringuo and nav.launch
@@ -266,6 +266,7 @@ planner_server:
       lookup_table_size: 20.0             # Size of the dubin/reeds-sheep distance window to cache, in meters.
       cache_obstacle_heuristic: false     # Cache the obstacle map dynamic programming distance expansion heuristic between subsiquent replannings of the same goal location. Dramatically speeds up replanning performance (40x) if costmap is largely static.
       smooth_path: True                   # If true, does a simple and quick smoothing post-processing to the path
+      map_topic: map
 
       smoother:
         max_iterations: 1000
@@ -361,26 +362,37 @@ ekf_filter_node_odom:
     base_link_frame: base_link
     world_frame: odom
     
-    # odom0: odom
-    # odom0_config: [false, false, false,
-    #                false, false, false,
-    #                true,  true,  false,
-    #                false, false, false,
-    #                false, false, false]
-    # odom0_queue_size: 10
-    # odom0_nodelay: true
-    # odom0_differential: false
-    # odom0_relative: false
+    odom0: sdv_localization/vectornav/odom
+    odom0_config: [true, true, false,
+                   false, false, true,
+                   true,  true,  false,
+                   false, false, false,
+                   false, false, false]
+    odom0_queue_size: 10
+    odom0_nodelay: true
+    odom0_differential: true
+    odom0_relative: false
+    
+    odom1: sdv_localization/sbg/odom
+    odom1_config: [true,  true, false,
+                   false, false, true,
+                   true,  true,  false,
+                   false, false, false,
+                   false, false, false]
+    odom1_queue_size: 10
+    odom1_nodelay: true
+    odom1_differential: false
+    odom1_relative: false
 
     imu0: vectornav/imu
     imu0_config: [false, false, false,
-                   false, false, true,
-                   true,  false,  false,
+                   false, false, false,
+                   false,  false,  false,
                    false, false, false,
                    true, false, false]
     imu0_queue_size: 10
     imu0_nodelay: true
-    imu0_differential: true
+    imu0_differential: false
     imu0_relative: false
     imu0_remove_gravitational_acceleration: true
 
@@ -448,10 +460,10 @@ ekf_filter_node_map: #here is where i have to modify it, would it require the jo
     base_link_frame: base_link
     world_frame: map
 
-    odom0: odometry/local
-    odom0_config: [false, false, false,
+    odom0: gps/filtered
+    odom0_config: [true, true, false,
                    false, false, false,
-                   true,  true,  false,
+                   false, false, false,
                    false, false, false,
                    false, false, false]
     odom0_queue_size: 10
@@ -459,56 +471,27 @@ ekf_filter_node_map: #here is where i have to modify it, would it require the jo
     odom0_differential: false
     odom0_relative: false
 
-
-    odom1: sdv_localization/vectornav/odom
-    odom1_config: [true,  true,  false,
+    odom0: sdv_localization/vectornav/odom
+    odom0_config: [true, true, false,
+                   false, false, true,
+                   true,  true,  false,
                    false, false, false,
-                   false, false, false,
+                   false, false, false]
+    odom0_queue_size: 10
+    odom0_nodelay: true
+    odom0_differential: false
+    odom0_relative: false
+    
+    odom1: sdv_localization/sbg/odom
+    odom1_config: [true, true, false,
+                   false, false, true,
+                   true,  true,  false,
                    false, false, false,
                    false, false, false]
     odom1_queue_size: 10
     odom1_nodelay: true
     odom1_differential: false
     odom1_relative: false
-
-    odom2: sdv_localization/sbg/odom
-    odom2_config: [true,  true,  false,
-                   false, false, false,
-                   false, false, false,
-                   false, false, false,
-                   false, false, false]
-    odom2_queue_size: 10
-    odom2_nodelay: true
-    odom2_differential: false
-    odom2_relative: false
-
- 
-    imu0: vectornav/imu
-    imu0_config: [false, false, false,
-                   false, false, false,
-                   true,  true,  false,
-                   false, false, true,
-                   true, true, false]
-    imu0_queue_size: 10
-    imu0_nodelay: true
-    imu0_differential: true
-    imu0_relative: false
-    imu0_remove_gravitational_acceleration: true
-
-
-    imu1: sbg/imu/data #change
-    imu1_config: [false, false, false,
-                  false,  false,  true,
-                  true, true, false,
-                  false,  false,  true,
-                  true,  true,  false]
-    imu1_nodelay: false
-    imu1_differential: false
-    imu1_relative: false
-    imu1_queue_size: 10
-    imu1_remove_gravitational_acceleration: true
-    use_control: false
-    
 
     process_noise_covariance: [0.01, 0.0,    0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,
                               0.0,    0.01,  0.0,    0.0,    0.0,    0.0,    0.0,     0.0,     0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,

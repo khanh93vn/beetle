@@ -174,11 +174,11 @@ def generate_launch_description():
          output='screen',
          parameters=[configured_params],
          arguments=['--ros-args', '--log-level', log_level],
-         remappings=[('imu/data', 'sbg/imu/data'),
-                     ('gps/fix', 'sbg/nav_sat_fix'),
+         remappings=[('imu/data', 'vectornav/imu'),
+                     ('gps/fix', '/vectornav/gnss'),
                      ('gps/filtered', 'gps/filtered'),
                      ('odometry/gps', 'odometry/gps'),
-                     ('odometry/filtered', 'odometry/global')
+                     ('odometry/filtered', 'sdv_localization/vectornav/odom')
                      ])
     
     
