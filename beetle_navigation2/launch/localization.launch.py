@@ -27,7 +27,7 @@ def generate_launch_description():
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
 
-    lifecycle_nodes = ['map_server']
+    lifecycle_nodes = ['map_server', 'amcl']
 
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
@@ -210,9 +210,9 @@ def generate_launch_description():
     # Add the actions to launch all of the localiztion nodes
     ld.add_action(load_nodes)
     ld.add_action(load_composable_nodes)
-    ld.add_action(start_ekf_local)
+    #ld.add_action(start_ekf_local)
     #ld.add_action(start_ekf_global)
     #ld.add_action(start_navsat)
-    ld.add_action(start_mock_transformation)
+    #ld.add_action(start_mock_transformation)
 
     return ld
