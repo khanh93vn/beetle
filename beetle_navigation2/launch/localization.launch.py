@@ -14,6 +14,7 @@ from nav2_common.launch import RewrittenYaml
 
 
 def generate_launch_description():
+    sdv_localization = FindPackageShare(package='sdv_localization').find('sdv_localization')
     # Get the launch directory
     beetle_nav_dir = FindPackageShare(package='beetle_navigation2').find('beetle_navigation2')
 
@@ -45,6 +46,17 @@ def generate_launch_description():
 
     declare_map_yaml_cmd = DeclareLaunchArgument(
         'map',
+        description='Full path to map yaml file to load')
+    
+    declare_map2_yaml_cmd = DeclareLaunchArgument(
+        'map2',
+        #default_value=os.path.join(beetle_nav_dir, 'maps', 'Field.yaml'),
+        #default_value=os.path.join(sdv_localization, 'maps', 'map.yaml'),
+        #default_value=os.path.join(sdv_localization, 'maps', 'carreta_map.yaml'),
+        default_value=os.path.join(sdv_localization, 'maps', 'carreta_raw_map.yaml'),
+        #default_value=os.path.join(sdv_localization, 'maps', '3.yaml'),
+
+        #default_value=os.path.join(sdv_localization, 'maps', 'aa.yaml'),
         description='Full path to map yaml file to load')
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
@@ -198,6 +210,7 @@ def generate_launch_description():
 
     # Declare the launch options
     ld.add_action(declare_map_yaml_cmd)
+    #ld.add_action(declare_map2_yaml_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_autostart_cmd)
@@ -210,7 +223,7 @@ def generate_launch_description():
     # Add the actions to launch all of the localiztion nodes
     ld.add_action(load_nodes)
     ld.add_action(load_composable_nodes)
-    #ld.add_action(start_ekf_local)
+    ld.add_action(start_ekf_local)
     #ld.add_action(start_ekf_global)
     #ld.add_action(start_navsat)
     #ld.add_action(start_mock_transformation)
